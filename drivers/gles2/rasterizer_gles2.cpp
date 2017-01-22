@@ -10949,7 +10949,8 @@ void RasterizerGLES2::init() {
 #else
 
 	for (Set<String>::Element *E=extensions.front();E;E=E->next()) {
-		print_line(E->get());
+		//don't print these extensions!
+		//print_line(E->get());
 	}
 	read_depth_supported=extensions.has("GL_OES_depth_texture");
 	use_rgba_shadowmaps=!read_depth_supported;
