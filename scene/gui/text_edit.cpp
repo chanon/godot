@@ -5,7 +5,7 @@
 /*                           GODOT ENGINE                                */
 /*                    http://www.godotengine.org                         */
 /*************************************************************************/
-/* Copyright (c) 2007-2016 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2007-2017 Juan Linietsky, Ariel Manzur.                 */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -3690,7 +3690,7 @@ int TextEdit::_get_column_pos_of_word(const String &p_key, const String &p_searc
 
 				if (col > 0 && _is_text_char(p_search[col-1])) {
 					col = -1;
-				} else if (_is_text_char(p_search[col+p_key.length()])) {
+				} else if ((col + p_key.length()) < p_search.length() && _is_text_char(p_search[col+p_key.length()])) {
 					col = -1;
 				}
 			}
