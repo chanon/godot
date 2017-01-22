@@ -310,6 +310,10 @@ void UndoRedo::redo() {
 		return; //nothing to redo
 	current_action++;
 
+	
+	//print_line("DO ACTION:");
+	//print_line(actions[current_action].name.c_str());
+
 	_process_operation_list(actions[current_action].do_ops.front());
 	version++;
 }
@@ -319,6 +323,10 @@ void UndoRedo::undo() {
 	ERR_FAIL_COND(action_level>0);
 	if (current_action<0)
 		return; //nothing to redo
+
+	//print_line("UNDO ACTION:");
+	//print_line(actions[current_action].name.c_str());
+
 	_process_operation_list(actions[current_action].undo_ops.front());
 	current_action--;
 	version--;
