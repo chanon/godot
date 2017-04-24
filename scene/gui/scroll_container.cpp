@@ -106,8 +106,8 @@ void ScrollContainer::_input_event(const InputEvent& p_input_event) {
 				}
 			}
 
-			if(!OS::get_singleton()->has_touchscreen_ui_hint())
-				return;
+			//if(!OS::get_singleton()->has_touchscreen_ui_hint())
+				//return;
 
 			if (mb.button_index!=BUTTON_LEFT)
 				break;
@@ -129,7 +129,8 @@ void ScrollContainer::_input_event(const InputEvent& p_input_event) {
 					drag_accum=Vector2();
 					last_drag_accum=Vector2();
 					drag_from=Vector2(h_scroll->get_val(),v_scroll->get_val());
-					drag_touching=OS::get_singleton()->has_touchscreen_ui_hint();
+					//drag_touching=OS::get_singleton()->has_touchscreen_ui_hint();
+					drag_touching = true;
 					drag_touching_deaccel=false;
 					time_since_motion=0;
 					if (drag_touching) {
