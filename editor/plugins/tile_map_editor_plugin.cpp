@@ -3,7 +3,7 @@
 /*************************************************************************/
 /*                       This file is part of:                           */
 /*                           GODOT ENGINE                                */
-/*                    http://www.godotengine.org                         */
+/*                      https://godotengine.org                          */
 /*************************************************************************/
 /* Copyright (c) 2007-2017 Juan Linietsky, Ariel Manzur.                 */
 /* Copyright (c) 2014-2017 Godot Engine contributors (cf. AUTHORS.md)    */
@@ -52,7 +52,14 @@ void TileMapEditor::_notification(int p_what) {
 			rotate_270->set_icon(get_icon("Rotate270", "EditorIcons"));
 
 		} break;
+
 		case EditorSettings::NOTIFICATION_EDITOR_SETTINGS_CHANGED: {
+
+			bool new_show_tile_info = EditorSettings::get_singleton()->get("tile_map/show_tile_info_on_hover");
+			if (new_show_tile_info != show_tile_info) {
+				show_tile_info = new_show_tile_info;
+				tile_info->set_hidden(!show_tile_info);
+			}
 
 			if (is_visible()) {
 				_update_palette();
@@ -330,6 +337,8 @@ DVector<Vector2> TileMapEditor::_bucket_fill(const Point2i &p_start, bool erase,
 
 		if (id == TileMap::INVALID_CELL)
 			return DVector<Vector2>();
+	} else if (prev_id == TileMap::INVALID_CELL) {
+		return DVector<Vector2>();
 	}
 
 	Rect2i r = node->get_item_rect();
@@ -910,12 +919,15 @@ bool TileMapEditor::forward_input_event(const InputEvent &p_event) {
 				canvas_item_editor->update();
 			}
 
-			int tile_under = node->get_cell(over_tile.x, over_tile.y);
-			String tile_name = "none";
+			if (show_tile_info) {
+				int tile_under = node->get_cell(over_tile.x, over_tile.y);
+				String tile_name = "none";
 
-			if (node->get_tileset()->has_tile(tile_under))
-				tile_name = node->get_tileset()->tile_get_name(tile_under);
-			tile_info->set_text(String::num(over_tile.x) + ", " + String::num(over_tile.y) + " [" + tile_name + "]");
+				if (node->get_tileset()->has_tile(tile_under))
+					tile_name = node->get_tileset()->tile_get_name(tile_under);
+				tile_info->set_text(String::num(over_tile.x) + ", " + String::num(over_tile.y) + " [" + tile_name + "]");
+				tile_info->show();
+			}
 
 			if (tool == TOOL_PAINTING) {
 
@@ -1440,6 +1452,7 @@ TileMapEditor::TileMapEditor(EditorNode *p_editor) {
 	tool = TOOL_NONE;
 	selection_active = false;
 	mouse_over = false;
+	show_tile_info = true;
 
 	flip_h = false;
 	flip_v = false;
@@ -1453,6 +1466,11 @@ TileMapEditor::TileMapEditor(EditorNode *p_editor) {
 	ED_SHORTCUT("tile_map_editor/transpose", TTR("Transpose"));
 	ED_SHORTCUT("tile_map_editor/mirror_x", TTR("Mirror X"), KEY_A);
 	ED_SHORTCUT("tile_map_editor/mirror_y", TTR("Mirror Y"), KEY_S);
+
+	HBoxContainer *tool_hb1 = memnew(HBoxContainer);
+	add_child(tool_hb1);
+	HBoxContainer *tool_hb2 = memnew(HBoxContainer);
+	add_child(tool_hb2);
 
 	search_box = memnew(LineEdit);
 	search_box->set_h_size_flags(SIZE_EXPAND_FILL);
@@ -1485,6 +1503,7 @@ TileMapEditor::TileMapEditor(EditorNode *p_editor) {
 	toolbar = memnew(HBoxContainer);
 	toolbar->set_h_size_flags(SIZE_EXPAND_FILL);
 	toolbar->set_alignment(BoxContainer::ALIGN_END);
+	toolbar->hide();
 	CanvasItemEditor::get_singleton()->add_control_to_menu_panel(toolbar);
 
 	// Tile position
@@ -1510,54 +1529,49 @@ TileMapEditor::TileMapEditor(EditorNode *p_editor) {
 
 	toolbar->add_child(options);
 
-	toolbar->add_child(memnew(VSeparator));
-
 	transp = memnew(ToolButton);
 	transp->set_toggle_mode(true);
 	transp->set_tooltip(TTR("Transpose") + " (" + ED_GET_SHORTCUT("tile_map_editor/transpose")->get_as_text() + ")");
 	transp->set_focus_mode(FOCUS_NONE);
 	transp->connect("pressed", this, "_update_transform_buttons", make_binds(transp));
-	toolbar->add_child(transp);
+	tool_hb1->add_child(transp);
 	mirror_x = memnew(ToolButton);
 	mirror_x->set_toggle_mode(true);
 	mirror_x->set_tooltip(TTR("Mirror X") + " (" + ED_GET_SHORTCUT("tile_map_editor/mirror_x")->get_as_text() + ")");
 	mirror_x->set_focus_mode(FOCUS_NONE);
 	mirror_x->connect("pressed", this, "_update_transform_buttons", make_binds(mirror_x));
-	toolbar->add_child(mirror_x);
+	tool_hb1->add_child(mirror_x);
 	mirror_y = memnew(ToolButton);
 	mirror_y->set_toggle_mode(true);
 	mirror_y->set_tooltip(TTR("Mirror Y") + " (" + ED_GET_SHORTCUT("tile_map_editor/mirror_y")->get_as_text() + ")");
 	mirror_y->set_focus_mode(FOCUS_NONE);
 	mirror_y->connect("pressed", this, "_update_transform_buttons", make_binds(mirror_y));
-	toolbar->add_child(mirror_y);
-
-	toolbar->add_child(memnew(VSeparator));
+	tool_hb1->add_child(mirror_y);
 
 	rotate_0 = memnew(ToolButton);
 	rotate_0->set_toggle_mode(true);
 	rotate_0->set_tooltip(TTR("Rotate 0 degrees"));
 	rotate_0->set_focus_mode(FOCUS_NONE);
 	rotate_0->connect("pressed", this, "_update_transform_buttons", make_binds(rotate_0));
-	toolbar->add_child(rotate_0);
+	tool_hb2->add_child(rotate_0);
 	rotate_90 = memnew(ToolButton);
 	rotate_90->set_toggle_mode(true);
 	rotate_90->set_tooltip(TTR("Rotate 90 degrees"));
 	rotate_90->set_focus_mode(FOCUS_NONE);
 	rotate_90->connect("pressed", this, "_update_transform_buttons", make_binds(rotate_90));
-	toolbar->add_child(rotate_90);
+	tool_hb2->add_child(rotate_90);
 	rotate_180 = memnew(ToolButton);
 	rotate_180->set_toggle_mode(true);
 	rotate_180->set_tooltip(TTR("Rotate 180 degrees"));
 	rotate_180->set_focus_mode(FOCUS_NONE);
 	rotate_180->connect("pressed", this, "_update_transform_buttons", make_binds(rotate_180));
-	toolbar->add_child(rotate_180);
+	tool_hb2->add_child(rotate_180);
 	rotate_270 = memnew(ToolButton);
 	rotate_270->set_toggle_mode(true);
 	rotate_270->set_tooltip(TTR("Rotate 270 degrees"));
 	rotate_270->set_focus_mode(FOCUS_NONE);
 	rotate_270->connect("pressed", this, "_update_transform_buttons", make_binds(rotate_270));
-	toolbar->add_child(rotate_270);
-	toolbar->hide();
+	tool_hb2->add_child(rotate_270);
 
 	rotate_0->set_pressed(true);
 }
@@ -1602,6 +1616,7 @@ TileMapEditorPlugin::TileMapEditorPlugin(EditorNode *p_node) {
 	EDITOR_DEF("tile_map/show_tile_ids", true);
 	EDITOR_DEF("tile_map/sort_tiles_by_name", false);
 	EDITOR_DEF("tile_map/bucket_fill_preview", true);
+	EDITOR_DEF("tile_map/show_tile_info_on_hover", true);
 
 	tile_map_editor = memnew(TileMapEditor(p_node));
 	add_control_to_container(CONTAINER_CANVAS_EDITOR_SIDE, tile_map_editor);

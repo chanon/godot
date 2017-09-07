@@ -3,7 +3,7 @@
 /*************************************************************************/
 /*                       This file is part of:                           */
 /*                           GODOT ENGINE                                */
-/*                    http://www.godotengine.org                         */
+/*                      https://godotengine.org                          */
 /*************************************************************************/
 /* Copyright (c) 2007-2017 Juan Linietsky, Ariel Manzur.                 */
 /* Copyright (c) 2014-2017 Godot Engine contributors (cf. AUTHORS.md)    */
@@ -69,7 +69,6 @@
 #include "core/io/file_access_zip.h"
 #include "core/io/stream_peer_ssl.h"
 #include "core/io/stream_peer_tcp.h"
-#include "core/os/thread.h"
 #include "main/input_default.h"
 #include "performance.h"
 #include "translation.h"
@@ -109,6 +108,8 @@ static bool force_lowdpi = false;
 static int init_screen = -1;
 static bool use_vsync = true;
 static bool editor = false;
+
+static OS::ProcessID allow_focus_steal_pid = 0;
 
 static String unescape_cmdline(const String &p_str) {
 
@@ -527,11 +528,10 @@ Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_ph
 			} else {
 				goto error;
 			}
-		} else if (I->get() == "-epid") {
+		} else if (I->get() == "-allow_focus_steal_pid") {
 			if (I->next()) {
 
-				int editor_pid = I->next()->get().to_int();
-				Globals::get_singleton()->set("editor_pid", editor_pid);
+				allow_focus_steal_pid = I->next()->get().to_int64();
 				N = I->next()->next();
 			} else {
 				goto error;
@@ -562,10 +562,11 @@ Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_ph
 	if (debug_mode == "remote") {
 
 		ScriptDebuggerRemote *sdr = memnew(ScriptDebuggerRemote);
-		uint16_t debug_port = GLOBAL_DEF("debug/remote_port", 6007);
+		uint16_t debug_port = 6096;
 		if (debug_host.find(":") != -1) {
-			debug_port = debug_host.get_slicec(':', 1).to_int();
-			debug_host = debug_host.get_slicec(':', 0);
+			int sep_pos = debug_host.find_last(":");
+			debug_port = debug_host.substr(sep_pos + 1, debug_host.length()).to_int();
+			debug_host = debug_host.substr(0, sep_pos);
 		}
 		Error derr = sdr->connect_to_host(debug_host, debug_port);
 
@@ -671,7 +672,7 @@ Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_ph
 		video_mode.width = globals->get("display/width");
 	if (!force_res && use_custom_res && globals->has("display/height"))
 		video_mode.height = globals->get("display/height");
-	if (!editor && (!bool(globals->get("display/allow_hidpi")) || force_lowdpi)) {
+	if (!editor && ((globals->has("display/allow_hidpi") && !globals->get("display/allow_hidpi")) || force_lowdpi)) {
 		OS::get_singleton()->_allow_hidpi = false;
 	}
 	if (use_custom_res && globals->has("display/fullscreen"))
@@ -840,7 +841,11 @@ error:
 	return ERR_INVALID_PARAMETER;
 }
 
-Error Main::setup2() {
+Error Main::setup2(Thread::ID p_main_tid_override) {
+
+	if (p_main_tid_override) {
+		Thread::_main_thread_id = p_main_tid_override;
+	}
 
 	OS::get_singleton()->initialize(video_mode, video_driver_idx, audio_driver_idx);
 	if (init_use_custom_pos) {
@@ -956,6 +961,10 @@ Error Main::setup2() {
 #ifdef TOOLS_ENABLED
 	EditorNode::register_editor_types();
 #endif
+
+	if (allow_focus_steal_pid) {
+		OS::get_singleton()->enable_for_stealing_focus(allow_focus_steal_pid);
+	}
 
 	MAIN_PRINT("Main: Load Scripts, Modules, Drivers");
 
@@ -1222,6 +1231,8 @@ bool Main::start() {
 				sml_aspect = SceneTree::STRETCH_ASPECT_KEEP_WIDTH;
 			else if (stretch_aspect == "keep_height")
 				sml_aspect = SceneTree::STRETCH_ASPECT_KEEP_HEIGHT;
+			else if (stretch_aspect == "expand")
+				sml_aspect = SceneTree::STRETCH_ASPECT_EXPAND;
 
 			sml->set_screen_stretch(sml_sm, sml_aspect, stretch_size);
 
@@ -1234,7 +1245,7 @@ bool Main::start() {
 			GLOBAL_DEF("display/stretch_mode", "disabled");
 			Globals::get_singleton()->set_custom_property_info("display/stretch_mode", PropertyInfo(Variant::STRING, "display/stretch_mode", PROPERTY_HINT_ENUM, "disabled,2d,viewport"));
 			GLOBAL_DEF("display/stretch_aspect", "ignore");
-			Globals::get_singleton()->set_custom_property_info("display/stretch_aspect", PropertyInfo(Variant::STRING, "display/stretch_aspect", PROPERTY_HINT_ENUM, "ignore,keep,keep_width,keep_height"));
+			Globals::get_singleton()->set_custom_property_info("display/stretch_aspect", PropertyInfo(Variant::STRING, "display/stretch_aspect", PROPERTY_HINT_ENUM, "ignore,keep,keep_width,keep_height,expand"));
 			sml->set_auto_accept_quit(GLOBAL_DEF("application/auto_accept_quit", true));
 		}
 

@@ -3,7 +3,7 @@
 /*************************************************************************/
 /*                       This file is part of:                           */
 /*                           GODOT ENGINE                                */
-/*                    http://www.godotengine.org                         */
+/*                      https://godotengine.org                          */
 /*************************************************************************/
 /* Copyright (c) 2007-2017 Juan Linietsky, Ariel Manzur.                 */
 /* Copyright (c) 2014-2017 Godot Engine contributors (cf. AUTHORS.md)    */
@@ -68,6 +68,9 @@ void SampleEditor::_stop_pressed() {
 }
 
 void SampleEditor::generate_preview_texture(const Ref<Sample> &p_sample, Ref<ImageTexture> &p_texture) {
+
+	if (p_sample == NULL)
+		return;
 
 	DVector<uint8_t> data = p_sample->get_data();
 

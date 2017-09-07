@@ -3,7 +3,7 @@
 /*************************************************************************/
 /*                       This file is part of:                           */
 /*                           GODOT ENGINE                                */
-/*                    http://www.godotengine.org                         */
+/*                      https://godotengine.org                          */
 /*************************************************************************/
 /* Copyright (c) 2007-2017 Juan Linietsky, Ariel Manzur.                 */
 /* Copyright (c) 2014-2017 Godot Engine contributors (cf. AUTHORS.md)    */
@@ -109,7 +109,7 @@ private:
 
 		Vector2 pos;
 		List<RID> canvas_items;
-		RID body;
+		Vector<RID> bodies;
 
 		SelfList<Quadrant> dirty_list;
 
@@ -131,7 +131,7 @@ private:
 		void operator=(const Quadrant &q) {
 			pos = q.pos;
 			canvas_items = q.canvas_items;
-			body = q.body;
+			bodies = q.bodies;
 			cells = q.cells;
 			navpoly_ids = q.navpoly_ids;
 			occluder_instances = q.occluder_instances;
@@ -140,7 +140,7 @@ private:
 			: dirty_list(this) {
 			pos = q.pos;
 			canvas_items = q.canvas_items;
-			body = q.body;
+			bodies = q.bodies;
 			cells = q.cells;
 			occluder_instances = q.occluder_instances;
 			navpoly_ids = q.navpoly_ids;
@@ -182,6 +182,9 @@ private:
 	void _update_quadrant_space(const RID &p_space);
 	void _update_quadrant_transform();
 	void _recompute_rect_cache();
+
+	void _update_all_items_material_state();
+	_FORCE_INLINE_ void _update_item_material_state(const RID &p_canvas_item);
 
 	_FORCE_INLINE_ int _get_quadrant_size() const;
 
@@ -232,7 +235,7 @@ public:
 
 	void set_collision_mask(uint32_t p_mask);
 	uint32_t get_collision_mask() const;
-	
+
 	void set_collision_layer_bit(int p_bit, bool p_value);
 	bool get_collision_layer_bit(int p_bit) const;
 
@@ -270,12 +273,17 @@ public:
 	bool is_y_sort_mode_enabled() const;
 
 	Array get_used_cells() const;
+	Array get_used_cells_by_id(int p_id) const;
 	Rect2 get_used_rect(); // Not const because of cache
 
 	void set_occluder_light_mask(int p_mask);
 	int get_occluder_light_mask() const;
 
 	virtual void set_light_mask(int p_light_mask);
+
+	virtual void set_material(const Ref<CanvasItemMaterial> &p_material);
+
+	virtual void set_use_parent_material(bool p_use_parent_material);
 
 	void clear();
 

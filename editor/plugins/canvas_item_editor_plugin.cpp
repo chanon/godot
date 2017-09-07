@@ -3,7 +3,7 @@
 /*************************************************************************/
 /*                       This file is part of:                           */
 /*                           GODOT ENGINE                                */
-/*                    http://www.godotengine.org                         */
+/*                      https://godotengine.org                          */
 /*************************************************************************/
 /* Copyright (c) 2007-2017 Juan Linietsky, Ariel Manzur.                 */
 /* Copyright (c) 2014-2017 Godot Engine contributors (cf. AUTHORS.md)    */
@@ -349,6 +349,8 @@ void CanvasItemEditor::set_state(const Dictionary &p_state) {
 		int idx = edit_menu->get_popup()->get_item_index(SNAP_USE_PIXEL);
 		edit_menu->get_popup()->set_item_checked(idx, snap_pixel);
 	}
+
+	viewport->update();
 }
 
 void CanvasItemEditor::_add_canvas_item(CanvasItem *p_canvas_item) {
@@ -1037,17 +1039,25 @@ void CanvasItemEditor::_viewport_input_event(const InputEvent &p_event) {
 
 		if (b.button_index == BUTTON_WHEEL_DOWN) {
 
-			if (zoom < MIN_ZOOM)
-				return;
+			if (bool(EditorSettings::get_singleton()->get("2d_editor/scroll_to_pan"))) {
 
-			float prev_zoom = zoom;
-			zoom = zoom * 0.95;
-			{
-				Point2 ofs(b.x, b.y);
-				ofs = ofs / prev_zoom - ofs / zoom;
-				h_scroll->set_val(h_scroll->get_val() + ofs.x);
-				v_scroll->set_val(v_scroll->get_val() + ofs.y);
+				v_scroll->set_val(v_scroll->get_val() + int(EditorSettings::get_singleton()->get("2d_editor/pan_speed")) / zoom * b.factor);
+
+			} else {
+
+				if (zoom < MIN_ZOOM)
+					return;
+
+				float prev_zoom = zoom;
+				zoom = zoom * (1 - (0.05 * b.factor));
+				{
+					Point2 ofs(b.x, b.y);
+					ofs = ofs / prev_zoom - ofs / zoom;
+					h_scroll->set_val(h_scroll->get_val() + ofs.x);
+					v_scroll->set_val(v_scroll->get_val() + ofs.y);
+				}
 			}
+
 			_update_scroll(0);
 			viewport->update();
 			return;
@@ -1055,21 +1065,50 @@ void CanvasItemEditor::_viewport_input_event(const InputEvent &p_event) {
 
 		if (b.button_index == BUTTON_WHEEL_UP) {
 
-			if (zoom > MAX_ZOOM)
-				return;
+			if (bool(EditorSettings::get_singleton()->get("2d_editor/scroll_to_pan"))) {
 
-			float prev_zoom = zoom;
-			zoom = zoom * (1.0 / 0.95);
-			{
-				Point2 ofs(b.x, b.y);
-				ofs = ofs / prev_zoom - ofs / zoom;
-				h_scroll->set_val(h_scroll->get_val() + ofs.x);
-				v_scroll->set_val(v_scroll->get_val() + ofs.y);
+				v_scroll->set_val(v_scroll->get_val() - int(EditorSettings::get_singleton()->get("2d_editor/pan_speed")) / zoom * b.factor);
+
+			} else {
+
+				if (zoom > MAX_ZOOM)
+					return;
+
+				float prev_zoom = zoom;
+				zoom = zoom * ((0.95 + (0.05 * b.factor)) / 0.95);
+				{
+					Point2 ofs(b.x, b.y);
+					ofs = ofs / prev_zoom - ofs / zoom;
+					h_scroll->set_val(h_scroll->get_val() + ofs.x);
+					v_scroll->set_val(v_scroll->get_val() + ofs.y);
+				}
 			}
 
 			_update_scroll(0);
 			viewport->update();
 			return;
+		}
+
+		if (b.button_index == BUTTON_WHEEL_LEFT) {
+
+			if (bool(EditorSettings::get_singleton()->get("2d_editor/scroll_to_pan"))) {
+
+				h_scroll->set_val(h_scroll->get_val() - int(EditorSettings::get_singleton()->get("2d_editor/pan_speed")) / zoom * b.factor);
+
+				_update_scroll(0);
+				viewport->update();
+			}
+		}
+
+		if (b.button_index == BUTTON_WHEEL_RIGHT) {
+
+			if (bool(EditorSettings::get_singleton()->get("2d_editor/scroll_to_pan"))) {
+
+				h_scroll->set_val(h_scroll->get_val() + int(EditorSettings::get_singleton()->get("2d_editor/pan_speed")) / zoom * b.factor);
+
+				_update_scroll(0);
+				viewport->update();
+			}
 		}
 
 		if (b.button_index == BUTTON_RIGHT) {
@@ -1422,10 +1461,12 @@ void CanvasItemEditor::_viewport_input_event(const InputEvent &p_event) {
 		while ((n && n != scene && n->get_owner() != scene) || (n && !n->is_type("CanvasItem"))) {
 			n = n->get_parent();
 		};
-		c = n->cast_to<CanvasItem>();
-#if 0
-		if ( b.pressed ) box_selection_start( click );
-#endif
+
+		if (n) {
+			c = n->cast_to<CanvasItem>();
+		} else {
+			c = NULL;
+		}
 
 		additive_selection = b.mod.shift;
 		if (!_select(c, click, additive_selection))

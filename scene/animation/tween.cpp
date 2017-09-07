@@ -3,7 +3,7 @@
 /*************************************************************************/
 /*                       This file is part of:                           */
 /*                           GODOT ENGINE                                */
-/*                    http://www.godotengine.org                         */
+/*                      https://godotengine.org                          */
 /*************************************************************************/
 /* Copyright (c) 2007-2017 Juan Linietsky, Ariel Manzur.                 */
 /* Copyright (c) 2014-2017 Godot Engine contributors (cf. AUTHORS.md)    */
@@ -28,7 +28,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
 #include "tween.h"
-#include "method_bind_ext.inc"
+#include "method_bind_ext.gen.inc"
 
 void Tween::_add_pending_command(StringName p_key, const Variant &p_arg1, const Variant &p_arg2, const Variant &p_arg3, const Variant &p_arg4, const Variant &p_arg5, const Variant &p_arg6, const Variant &p_arg7, const Variant &p_arg8, const Variant &p_arg9, const Variant &p_arg10) {
 
@@ -559,12 +559,16 @@ void Tween::_tween_process(float p_delta) {
 
 		switch (data.type) {
 			case INTER_PROPERTY:
-			case INTER_METHOD:
-				break;
+			case INTER_METHOD: {
+				Variant result = _run_equation(data);
+				emit_signal("tween_step", object, data.key, data.elapsed, result);
+				_apply_tween_value(data, result);
+				if (data.finish)
+					_apply_tween_value(data, data.final_val);
+			} break;
+
 			case INTER_CALLBACK:
 				if (data.finish) {
-
-					Variant::CallError error;
 					if (data.call_deferred) {
 
 						switch (data.args) {
@@ -587,8 +591,8 @@ void Tween::_tween_process(float p_delta) {
 								object->call_deferred(data.key, data.arg[0], data.arg[1], data.arg[2], data.arg[3], data.arg[4]);
 								break;
 						}
-
 					} else {
+						Variant::CallError error;
 						Variant *arg[5] = {
 							&data.arg[0],
 							&data.arg[1],
@@ -598,19 +602,11 @@ void Tween::_tween_process(float p_delta) {
 						};
 						object->call(data.key, (const Variant **)arg, data.args, error);
 					}
-					if (!repeat)
-						call_deferred("remove", object, data.key);
 				}
-				continue;
+				break;
 		}
 
-		Variant result = _run_equation(data);
-		emit_signal("tween_step", object, data.key, data.elapsed, result);
-
-		_apply_tween_value(data, result);
-
 		if (data.finish) {
-			_apply_tween_value(data, data.final_val);
 			emit_signal("tween_complete", object, data.key);
 			// not repeat mode, remove completed action
 			if (!repeat)

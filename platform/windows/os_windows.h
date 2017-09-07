@@ -3,7 +3,7 @@
 /*************************************************************************/
 /*                       This file is part of:                           */
 /*                           GODOT ENGINE                                */
-/*                    http://www.godotengine.org                         */
+/*                      https://godotengine.org                          */
 /*************************************************************************/
 /* Copyright (c) 2007-2017 Juan Linietsky, Ariel Manzur.                 */
 /* Copyright (c) 2014-2017 Godot Engine contributors (cf. AUTHORS.md)    */
@@ -38,6 +38,7 @@
 #include "servers/visual_server.h"
 
 #include "drivers/rtaudio/audio_driver_rtaudio.h"
+#include "drivers/wasapi/audio_driver_wasapi.h"
 #include "drivers/unix/ip_unix.h"
 #include "servers/audio/audio_server_sw.h"
 #include "servers/audio/sample_manager_sw.h"
@@ -129,12 +130,17 @@ class OS_Windows : public OS {
 	InputDefault *input;
 	joystick_windows *joystick;
 
+#ifdef WASAPI_ENABLED
+	AudioDriverWASAPI driver_wasapi;
+#endif
 #ifdef RTAUDIO_ENABLED
 	AudioDriverRtAudio driver_rtaudio;
 #endif
 
 	void _drag_event(int p_x, int p_y, int idx);
 	void _touch_event(bool p_pressed, int p_x, int p_y, int idx);
+
+	void _update_window_style(bool repaint = true);
 
 	// functions used by main to initialize/deintialize the OS
 protected:
@@ -165,21 +171,11 @@ protected:
 	};
 	Map<ProcessID, ProcessInfo> *process_map;
 
-	struct MonitorInfo {
-		HMONITOR hMonitor;
-		HDC hdcMonitor;
-		Rect2 rect;
-		int dpi;
-	};
-
 	bool pre_fs_valid;
 	RECT pre_fs_rect;
-	Vector<MonitorInfo> monitor_info;
 	bool maximized;
 	bool minimized;
 	bool borderless;
-
-	static BOOL CALLBACK MonitorEnumProc(HMONITOR hMonitor, HDC hdcMonitor, LPRECT lprcMonitor, LPARAM dwData);
 
 public:
 	LRESULT WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
