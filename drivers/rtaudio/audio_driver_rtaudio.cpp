@@ -224,7 +224,6 @@ void AudioDriverRtAudio::finish() {
 
 AudioDriverRtAudio::AudioDriverRtAudio() {
 
-	active = false;
 	mutex = NULL;
 	mix_rate = 44100;
 	output_format = OUTPUT_STEREO;
