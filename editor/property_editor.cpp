@@ -3320,6 +3320,12 @@ void PropertyEditor::update_tree() {
 			item->add_button(1, get_icon("ReloadEmpty", "EditorIcons"), 3, true);
 		}
 	}
+
+	float expand_area = (float)tree->get_size().width;
+	if (tree->get_vscroll_bar()->is_visible()) {
+		expand_area -= tree->get_vscroll_bar()->get_combined_minimum_size().width;
+	}
+	tree->set_column_min_width(1, (int)(expand_area * 0.125f));
 }
 
 void PropertyEditor::_draw_transparency(Object *t, const Rect2 &p_rect) {
