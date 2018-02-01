@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2017 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2017 Godot Engine contributors (cf. AUTHORS.md)    */
+/* Copyright (c) 2007-2018 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2018 Godot Engine contributors (cf. AUTHORS.md)    */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -255,12 +255,10 @@ bool ReverbSW::process(int *p_input, int *p_output, int p_frames, int p_stereo_s
 	if (!reverb_buffer)
 		return false;
 
-//
-// p_input must point to a non-looping buffer.
-// BOTH p_input and p_output must be touched (use ClearModuleBuffer).
+		// p_input must point to a non-looping buffer.
+		// BOTH p_input and p_output must be touched (use ClearModuleBuffer).
 
-// �������LOCAL MACROS ������۲
-
+// LOCAL MACROS
 #undef LM_SETSRCOFFSET
 #define LM_SETSRCOFFSET(x)            \
 	(x) = current_params->x + Offset; \

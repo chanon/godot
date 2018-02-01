@@ -12,9 +12,7 @@ def get_name():
 
 def can_build():
 
-    import sys
-    import os
-    if sys.platform == 'darwin' or os.environ.has_key("OSXCROSS_IOS"):
+    if sys.platform == 'darwin' or ("OSXCROSS_IOS" in os.environ):
         return True
 
     return False
@@ -33,6 +31,7 @@ def get_opts():
         ('ios_exceptions', 'Enable exceptions', 'no'),
         ('ios_triple', 'Triple for ios toolchain', ''),
         ('ios_sim', 'Build simulator binary', 'no'),
+        ('use_lto', 'Use link time optimization', 'no')
     ]
 
 
@@ -49,25 +48,34 @@ def configure(env):
 
     env['ENV']['PATH'] = env['IPHONEPATH'] + "/Developer/usr/bin/:" + env['ENV']['PATH']
 
-    env['CC'] = '$IPHONEPATH/usr/bin/${ios_triple}clang'
-    env['CXX'] = '$IPHONEPATH/usr/bin/${ios_triple}clang++'
-    env['AR'] = '$IPHONEPATH/usr/bin/${ios_triple}ar'
-    env['RANLIB'] = '$IPHONEPATH/usr/bin/${ios_triple}ranlib'
+    compiler_path = '$IPHONEPATH/usr/bin/${ios_triple}'
+
+    ccache_path = os.environ.get("CCACHE")
+    if ccache_path == None:
+        env['CC'] = compiler_path + 'clang'
+        env['CXX'] = compiler_path + 'clang++'
+    else:
+        # there aren't any ccache wrappers available for iOS,
+        # to enable caching we need to prepend the path to the ccache binary
+        env['CC'] = ccache_path + ' ' + compiler_path + 'clang'
+        env['CXX'] = ccache_path + ' ' + compiler_path + 'clang++'
+    env['AR'] = compiler_path + 'ar'
+    env['RANLIB'] = compiler_path + 'ranlib'
 
     import string
     if (env["ios_sim"] == "yes" or env["arch"] == "x86"):  # i386, simulator
         env["arch"] = "x86"
         env["bits"] = "32"
-        env.Append(CCFLAGS=string.split('-arch i386 -fobjc-abi-version=2 -fobjc-legacy-dispatch -fmessage-length=0 -fpascal-strings -fblocks -fasm-blocks -D__IPHONE_OS_VERSION_MIN_REQUIRED=40100 -isysroot $IPHONESDK -mios-simulator-version-min=4.3 -DCUSTOM_MATRIX_TRANSFORM_H=\\\"build/iphone/matrix4_iphone.h\\\" -DCUSTOM_VECTOR3_TRANSFORM_H=\\\"build/iphone/vector3_iphone.h\\\"'))
+        env.Append(CCFLAGS='-arch i386 -fobjc-abi-version=2 -fobjc-legacy-dispatch -fmessage-length=0 -fpascal-strings -fblocks -fasm-blocks -D__IPHONE_OS_VERSION_MIN_REQUIRED=40100 -isysroot $IPHONESDK -mios-simulator-version-min=4.3 -DCUSTOM_MATRIX_TRANSFORM_H=\\\"build/iphone/matrix4_iphone.h\\\" -DCUSTOM_VECTOR3_TRANSFORM_H=\\\"build/iphone/vector3_iphone.h\\\"'.split())
     elif (env["arch"] == "arm64"):  # arm64
         env["bits"] = "64"
-        env.Append(CCFLAGS=string.split('-fno-objc-arc -arch arm64 -fmessage-length=0 -fno-strict-aliasing -fdiagnostics-print-source-range-info -fdiagnostics-show-category=id -fdiagnostics-parseable-fixits -fpascal-strings -fblocks -fvisibility=hidden -MMD -MT dependencies -miphoneos-version-min=7.0 -isysroot $IPHONESDK'))
+        env.Append(CCFLAGS='-fno-objc-arc -arch arm64 -fmessage-length=0 -fno-strict-aliasing -fdiagnostics-print-source-range-info -fdiagnostics-show-category=id -fdiagnostics-parseable-fixits -fpascal-strings -fblocks -fvisibility=hidden -MMD -MT dependencies -miphoneos-version-min=7.0 -isysroot $IPHONESDK'.split())
         env.Append(CPPFLAGS=['-DNEED_LONG_INT'])
         env.Append(CPPFLAGS=['-DLIBYUV_DISABLE_NEON'])
     else:  # armv7
         env["arch"] = "arm"
         env["bits"] = "32"
-        env.Append(CCFLAGS=string.split('-fno-objc-arc -arch armv7 -fmessage-length=0 -fno-strict-aliasing -fdiagnostics-print-source-range-info -fdiagnostics-show-category=id -fdiagnostics-parseable-fixits -fpascal-strings -fblocks -isysroot $IPHONESDK -fvisibility=hidden -mthumb "-DIBOutlet=__attribute__((iboutlet))" "-DIBOutletCollection(ClassName)=__attribute__((iboutletcollection(ClassName)))" "-DIBAction=void)__attribute__((ibaction)" -miphoneos-version-min=7.0 -MMD -MT dependencies'))
+        env.Append(CCFLAGS='-fno-objc-arc -arch armv7 -fmessage-length=0 -fno-strict-aliasing -fdiagnostics-print-source-range-info -fdiagnostics-show-category=id -fdiagnostics-parseable-fixits -fpascal-strings -fblocks -isysroot $IPHONESDK -fvisibility=hidden -mthumb "-DIBOutlet=__attribute__((iboutlet))" "-DIBOutletCollection(ClassName)=__attribute__((iboutletcollection(ClassName)))" "-DIBAction=void)__attribute__((ibaction)" -miphoneos-version-min=7.0 -MMD -MT dependencies'.split())
 
     if (env["arch"] == "x86"):
         env['IPHONEPLATFORM'] = 'iPhoneSimulator'
@@ -149,8 +157,11 @@ def configure(env):
     if (env["target"].startswith("release")):
 
         env.Append(CPPFLAGS=['-DNDEBUG', '-DNS_BLOCK_ASSERTIONS=1'])
-        env.Append(CPPFLAGS=['-O2', '-flto', '-ftree-vectorize', '-fomit-frame-pointer', '-ffast-math', '-funsafe-math-optimizations'])
-        env.Append(LINKFLAGS=['-O2', '-flto'])
+        env.Append(CPPFLAGS=['-O2', '-ftree-vectorize', '-fomit-frame-pointer', '-ffast-math', '-funsafe-math-optimizations'])
+        env.Append(LINKFLAGS=['-O2'])
+        if env['use_lto'] == 'yes':
+            env.Append(CPPFLAGS=['-flto'])
+            env.Append(LINKFLAGS=['-flto'])
 
         if env["target"] == "release_debug":
             env.Append(CPPFLAGS=['-DDEBUG_ENABLED'])

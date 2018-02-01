@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2017 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2017 Godot Engine contributors (cf. AUTHORS.md)    */
+/* Copyright (c) 2007-2018 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2018 Godot Engine contributors (cf. AUTHORS.md)    */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -1603,7 +1603,12 @@ void EditorNode::_edit_current() {
 
 	if (main_plugin) {
 
-		if (main_plugin != editor_plugin_screen) {
+		// special case if use of external editor is true
+		if (main_plugin->get_name() == "Script" && bool(EditorSettings::get_singleton()->get("external_editor/use_external_editor"))) {
+			main_plugin->edit(current_obj);
+		}
+
+		else if (main_plugin != editor_plugin_screen) {
 
 			// update screen main_plugin
 
@@ -1784,7 +1789,7 @@ void EditorNode::_run(bool p_current, const String &p_custom) {
 
 			current_option = -1;
 			//accept->get_cancel()->hide();
-			pick_main_scene->set_text(TTR("No main scene has ever been defined, select one?\nYou can change it later in later in \"Project Settings\" under the 'application' category."));
+			pick_main_scene->set_text(TTR("No main scene has ever been defined, select one?\nYou can change it later in \"Project Settings\" under the 'application' category."));
 			pick_main_scene->popup_centered_minsize();
 			return;
 		}
@@ -1871,6 +1876,7 @@ void EditorNode::_run(bool p_current, const String &p_custom) {
 		play_button->set_pressed(true);
 		play_button->set_icon(gui_base->get_icon("Reload", "EditorIcons"));
 	}
+	stop_button->set_disabled(false);
 
 	_playing_edited = p_current;
 }
@@ -2566,6 +2572,7 @@ void EditorNode::_menu_option_confirm(int p_option, bool p_confirmed) {
 			play_scene_button->set_icon(gui_base->get_icon("PlayScene", "EditorIcons"));
 			play_custom_scene_button->set_pressed(false);
 			play_custom_scene_button->set_icon(gui_base->get_icon("PlayCustom", "EditorIcons"));
+			stop_button->set_disabled(true);
 			//pause_button->set_pressed(false);
 			if (bool(EDITOR_DEF("run/always_close_output_on_stop", false))) {
 				for (int i = 0; i < bottom_panel_items.size(); i++) {
@@ -3128,7 +3135,7 @@ Error EditorNode::save_translatable_strings(const String &p_to_file) {
 	OS::Time time = OS::get_singleton()->get_time();
 	f->store_line("# Translation Strings Dump.");
 	f->store_line("# Created By.");
-	f->store_line("# \t" VERSION_FULL_NAME " (c) 2008-2017 Juan Linietsky, Ariel Manzur.");
+	f->store_line("# \t" VERSION_FULL_NAME " (c) 2007-2018 Juan Linietsky, Ariel Manzur.");
 	f->store_line("# From Scene: ");
 	f->store_line("# \t" + get_edited_scene()->get_filename());
 	f->store_line("");
@@ -5077,9 +5084,26 @@ void EditorNode::_bind_methods() {
 
 void EditorNode::_export_godot3_path(const String &p_path) {
 
-	Error err = export_godot3.export_godot3(p_path);
+	// Prevent exporting within the current project folder
+	// Copied from ProjectExportDialog
+	String location = Globals::get_singleton()->globalize_path(p_path).replace("\\", "/");
+	while (true) {
+
+		if (FileAccess::exists(location.plus_file("engine.cfg"))) {
+
+			accept->set_text(TTR("Please export outside the project folder!"));
+			accept->popup_centered_minsize();
+			return;
+		}
+		String nl = (location + "/..").simplify_path();
+		if (nl.find("/") == location.find_last("/"))
+			break;
+		location = nl;
+	}
+
+	Error err = export_godot3.export_godot3(p_path, export_godot3_dialog_convert_scripts->is_pressed());
 	if (err != OK) {
-		show_warning("Error exporting to Godot 3.0");
+		show_warning(TTR("Error exporting project to Godot 3.0."));
 	}
 }
 
@@ -5591,6 +5615,7 @@ EditorNode::EditorNode() {
 	stop_button->set_icon(gui_base->get_icon("MainStop", "EditorIcons"));
 	stop_button->connect("pressed", this, "_menu_option", make_binds(RUN_STOP));
 	stop_button->set_tooltip(TTR("Stop the scene."));
+	stop_button->set_disabled(true);
 	stop_button->set_shortcut(ED_SHORTCUT("editor/stop", TTR("Stop"), KEY_F8));
 
 	run_native = memnew(EditorRunNative);
@@ -6062,7 +6087,7 @@ EditorNode::EditorNode() {
 	about->add_child(vbc);
 	vbc->add_child(hbc);
 	Label *about_text = memnew(Label);
-	about_text->set_text(VERSION_FULL_NAME + String::utf8("\n\u00A9 2007-2017 Juan Linietsky, Ariel Manzur.\n\u00A9 2014-2017 ") + TTR("Godot Engine contributors") + "\n");
+	about_text->set_text(VERSION_FULL_NAME + String::utf8("\n\u00A9 2007-2018 Juan Linietsky, Ariel Manzur.\n\u00A9 2014-2018 ") + TTR("Godot Engine contributors") + "\n");
 	TextureFrame *logo = memnew(TextureFrame);
 	logo->set_texture(gui_base->get_icon("Logo", "EditorIcons"));
 	hbc->add_child(logo);
@@ -6345,6 +6370,10 @@ EditorNode::EditorNode() {
 	export_godot3_dialog = memnew(FileDialog);
 	export_godot3_dialog->set_access(FileDialog::ACCESS_FILESYSTEM);
 	export_godot3_dialog->set_mode(FileDialog::MODE_OPEN_DIR);
+	export_godot3_dialog_convert_scripts = memnew(CheckButton);
+	export_godot3_dialog_convert_scripts->set_text(TTR("Convert scripts (experimental)"));
+	export_godot3_dialog_convert_scripts->set_pressed(false);
+	export_godot3_dialog->get_vbox()->add_child(export_godot3_dialog_convert_scripts);
 	gui_base->add_child(export_godot3_dialog);
 	export_godot3_dialog->connect("dir_selected", this, "_export_godot3_path");
 

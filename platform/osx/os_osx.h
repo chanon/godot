@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2017 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2017 Godot Engine contributors (cf. AUTHORS.md)    */
+/* Copyright (c) 2007-2018 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2018 Godot Engine contributors (cf. AUTHORS.md)    */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -30,6 +30,7 @@
 #ifndef OS_OSX_H
 #define OS_OSX_H
 
+#include "crash_handler_osx.h"
 #include "drivers/alsa/audio_driver_alsa.h"
 #include "drivers/rtaudio/audio_driver_rtaudio.h"
 #include "drivers/unix/os_unix.h"
@@ -48,6 +49,7 @@
 #include "servers/visual/visual_server_wrap_mt.h"
 #include "servers/visual_server.h"
 #include <ApplicationServices/ApplicationServices.h>
+#include <AppKit/NSCursor.h>
 
 //bitch
 #undef CursorShape
@@ -101,6 +103,7 @@ public:
 	id context;
 
 	CursorShape cursor_shape;
+	NSCursor *cursors[CURSOR_MAX] = { NULL };
 	MouseMode mouse_mode;
 
 	String title;
@@ -110,6 +113,8 @@ public:
 
 	Size2 window_size;
 	Rect2 restore_rect;
+
+	CrashHandler crash_handler;
 
 	float _mouse_scale(float p_scale) {
 		if (display_scale > 1.0)
@@ -146,6 +151,7 @@ public:
 	virtual void alert(const String &p_alert, const String &p_title = "ALERT!");
 
 	virtual void set_cursor_shape(CursorShape p_shape);
+	virtual void set_custom_mouse_cursor(const RES &p_cursor, CursorShape p_shape, const Vector2 &p_hotspot);
 
 	virtual void set_mouse_show(bool p_show);
 	virtual void set_mouse_grab(bool p_grab);
@@ -209,12 +215,26 @@ public:
 	virtual void set_borderless_window(int p_borderless);
 	virtual bool get_borderless_window();
 
+	virtual void set_use_vsync(bool p_enable);
+	virtual bool is_vsync_enabled() const;
+
 	void run();
 
 	void set_mouse_mode(MouseMode p_mode);
 	MouseMode get_mouse_mode() const;
 
+	void disable_crash_handler();
+	bool is_disable_crash_handler() const;
+
+	virtual Error move_path_to_trash(String p_dir);
+
 	OS_OSX();
+
+private:
+	Point2 get_native_screen_position(int p_screen) const;
+	Point2 get_native_window_position() const;
+	void set_native_window_position(const Point2 &p_position);
+	Point2 get_screens_origin() const;
 };
 
 #endif

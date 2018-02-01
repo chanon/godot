@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2017 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2017 Godot Engine contributors (cf. AUTHORS.md)    */
+/* Copyright (c) 2007-2018 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2018 Godot Engine contributors (cf. AUTHORS.md)    */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -296,14 +296,7 @@ void Physics2DServerSW::area_set_space(RID p_area, RID p_space) {
 	if (area->get_space() == space)
 		return; //pointless
 
-	for (Set<Constraint2DSW *>::Element *E = area->get_constraints().front(); E; E = E->next()) {
-		RID self = E->get()->get_self();
-		if (!self.is_valid())
-			continue;
-		free(self);
-	}
 	area->clear_constraints();
-
 	area->set_space(space);
 };
 
@@ -540,14 +533,7 @@ void Physics2DServerSW::body_set_space(RID p_body, RID p_space) {
 	if (body->get_space() == space)
 		return; //pointless
 
-	for (Map<Constraint2DSW *, int>::Element *E = body->get_constraint_map().front(); E; E = E->next()) {
-		RID self = E->key()->get_self();
-		if (!self.is_valid())
-			continue;
-		free(self);
-	}
 	body->clear_constraint_map();
-
 	body->set_space(space);
 };
 

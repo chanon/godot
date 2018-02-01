@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2017 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2017 Godot Engine contributors (cf. AUTHORS.md)    */
+/* Copyright (c) 2007-2018 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2018 Godot Engine contributors (cf. AUTHORS.md)    */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -90,7 +90,7 @@ void EditorHistory::_add_object(ObjectID p_object, const String &p_property, int
 		if (obj->is_type("ScriptEditorDebuggerInspectedObject")) {
 			for (int i = current; i >= 0; i--) {
 				Object *pre_obj = ObjectDB::get_instance(get_history_obj(i));
-				if (pre_obj->is_type("ScriptEditorDebuggerInspectedObject")) {
+				if (pre_obj != NULL && pre_obj->is_type("ScriptEditorDebuggerInspectedObject")) {
 					if (pre_obj->call("get_remote_object_id") == obj->call("get_remote_object_id")) {
 						History &pr = history[i];
 						pr.path[pr.path.size() - 1] = o;
@@ -559,8 +559,6 @@ bool EditorData::check_and_update_scene(int p_idx) {
 	Set<String> checked_scenes;
 
 	bool must_reload = _find_updated_instances(edited_scene[p_idx].root, edited_scene[p_idx].root, checked_scenes);
-
-	print_line("MUST RELOAD? " + itos(must_reload));
 
 	if (must_reload) {
 		Ref<PackedScene> pscene;

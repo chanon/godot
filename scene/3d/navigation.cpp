@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2017 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2017 Godot Engine contributors (cf. AUTHORS.md)    */
+/* Copyright (c) 2007-2018 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2018 Godot Engine contributors (cf. AUTHORS.md)    */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -34,8 +34,6 @@ void Navigation::_navmesh_link(int p_id) {
 	ERR_FAIL_COND(!navmesh_map.has(p_id));
 	NavMesh &nm = navmesh_map[p_id];
 	ERR_FAIL_COND(nm.linked);
-
-	print_line("LINK");
 
 	DVector<Vector3> vertices = nm.navmesh->get_vertices();
 	int len = vertices.size();
@@ -143,8 +141,6 @@ void Navigation::_navmesh_unlink(int p_id) {
 	ERR_FAIL_COND(!navmesh_map.has(p_id));
 	NavMesh &nm = navmesh_map[p_id];
 	ERR_FAIL_COND(!nm.linked);
-
-	print_line("UNLINK");
 
 	for (List<Polygon>::Element *E = nm.polygons.front(); E; E = E->next()) {
 

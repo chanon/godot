@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2017 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2017 Godot Engine contributors (cf. AUTHORS.md)    */
+/* Copyright (c) 2007-2018 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2018 Godot Engine contributors (cf. AUTHORS.md)    */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -114,7 +114,7 @@ static inline int atomic_conditional_increment(volatile int *pw) {
 			"m"(*pw)
 			: // input (%3)
 			"cc" // clobbers
-			);
+	);
 
 	return rv;
 }
@@ -135,7 +135,7 @@ static inline int atomic_decrement(volatile int *pw) {
 	return static_cast<int>(rv);
 }
 
-/* PowerPC32/64 GCC */
+	/* PowerPC32/64 GCC */
 
 #elif (defined(__GNUC__)) && (defined(__powerpc__) || defined(__ppc__))
 
@@ -188,7 +188,7 @@ inline int atomic_decrement(int *pw) {
 	return rv;
 }
 
-/* CW ARM */
+	/* CW ARM */
 
 #elif defined(__GNUC__) && (defined(__arm__))
 
@@ -234,7 +234,7 @@ inline int atomic_decrement(volatile int *v) {
 	return t;
 }
 
-/* CW PPC */
+	/* CW PPC */
 
 #elif (defined(__MWERKS__)) && defined(__POWERPC__)
 
@@ -279,7 +279,7 @@ inline long atomic_decrement(register long *pw) {
 	return a;
 }
 
-/* Any Windows (MSVC) */
+	/* Any Windows (MSVC) */
 
 #elif defined(_MSC_VER)
 

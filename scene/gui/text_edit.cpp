@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2017 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2017 Godot Engine contributors (cf. AUTHORS.md)    */
+/* Copyright (c) 2007-2018 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2018 Godot Engine contributors (cf. AUTHORS.md)    */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -3370,6 +3370,21 @@ void TextEdit::cut() {
 	}
 }
 
+void TextEdit::convert_case(int p_case) {
+	if (selection.active) {
+		String text = _base_get_text(selection.from_line, selection.from_column, selection.to_line, selection.to_column);
+		selection.active = false;
+		_remove_text(selection.from_line, selection.from_column, selection.to_line, selection.to_column);
+		cursor_set_line(selection.from_line);
+		cursor_set_column(selection.from_column);
+		if (p_case == UPPERCASE) {
+			_insert_text_at_cursor(text.to_upper());
+		} else if (p_case == LOWERCASE) {
+			_insert_text_at_cursor(text.to_lower());
+		}
+	}
+}
+
 void TextEdit::copy() {
 
 	if (!selection.active) {
@@ -3941,6 +3956,11 @@ int TextEdit::get_v_scroll() const {
 }
 void TextEdit::set_v_scroll(int p_scroll) {
 
+	if (!scroll_past_end_of_file_enabled) {
+		if (p_scroll + get_visible_rows() > get_line_count()) {
+			p_scroll = get_line_count() - get_visible_rows();
+		}
+	}
 	v_scroll->set_val(p_scroll);
 	cursor.line_ofs = p_scroll;
 }
@@ -3950,7 +3970,6 @@ int TextEdit::get_h_scroll() const {
 	return h_scroll->get_val();
 }
 void TextEdit::set_h_scroll(int p_scroll) {
-
 	h_scroll->set_val(p_scroll);
 }
 
@@ -4308,6 +4327,16 @@ void TextEdit::menu_option(int p_option) {
 				clear();
 			}
 		} break;
+		case MENU_UPPERCASE: {
+			if (!readonly) {
+				convert_case(UPPERCASE);
+			}
+		} break;
+		case MENU_LOWERCASE: {
+			if (!readonly) {
+				convert_case(LOWERCASE);
+			}
+		} break;
 		case MENU_SELECT_ALL: {
 			select_all();
 		} break;
@@ -4368,6 +4397,7 @@ void TextEdit::_bind_methods() {
 	ObjectTypeDB::bind_method(_MD("paste"), &TextEdit::paste);
 	ObjectTypeDB::bind_method(_MD("select_all"), &TextEdit::select_all);
 	ObjectTypeDB::bind_method(_MD("select", "from_line", "from_column", "to_line", "to_column"), &TextEdit::select);
+	ObjectTypeDB::bind_method(_MD("convert_case", "case"), &TextEdit::convert_case);
 
 	ObjectTypeDB::bind_method(_MD("is_selection_active"), &TextEdit::is_selection_active);
 	ObjectTypeDB::bind_method(_MD("get_selection_from_line"), &TextEdit::get_selection_from_line);
@@ -4543,6 +4573,9 @@ TextEdit::TextEdit() {
 	menu->add_separator();
 	menu->add_item(TTR("Select All"), MENU_SELECT_ALL, KEY_MASK_CMD | KEY_A);
 	menu->add_item(TTR("Clear"), MENU_CLEAR);
+	menu->add_separator();
+	menu->add_item(TTR("UpperCase"), MENU_UPPERCASE);
+	menu->add_item(TTR("LowerCase"), MENU_LOWERCASE);
 	menu->add_separator();
 	menu->add_item(TTR("Undo"), MENU_UNDO, KEY_MASK_CMD | KEY_Z);
 	menu->connect("item_pressed", this, "menu_option");

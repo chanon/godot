@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2017 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2017 Godot Engine contributors (cf. AUTHORS.md)    */
+/* Copyright (c) 2007-2018 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2018 Godot Engine contributors (cf. AUTHORS.md)    */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -66,7 +66,6 @@ String Variant::get_type_name(Variant::Type p_type) {
 		} break;
 
 		// math types
-
 		case VECTOR2: {
 
 			return "Vector2";
@@ -733,7 +732,6 @@ bool Variant::is_zero() const {
 		} break;
 
 		// math types
-
 		case VECTOR2: {
 
 			return *reinterpret_cast<const Vector2 *>(_data._mem) == Vector2();
@@ -958,7 +956,6 @@ void Variant::reference(const Variant &p_variant) {
 		} break;
 
 		// math types
-
 		case VECTOR2: {
 
 			memnew_placement(_data._mem, Vector2(*reinterpret_cast<const Vector2 *>(p_variant._data._mem)));
@@ -2608,8 +2605,8 @@ uint32_t Variant::hash() const {
 
 			return reinterpret_cast<const String *>(_data._mem)->hash();
 		} break;
-		// math types
 
+		// math types
 		case VECTOR2: {
 
 			uint32_t hash = hash_djb2_one_float(reinterpret_cast<const Vector2 *>(_data._mem)->x);

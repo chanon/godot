@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2017 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2017 Godot Engine contributors (cf. AUTHORS.md)    */
+/* Copyright (c) 2007-2018 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2018 Godot Engine contributors (cf. AUTHORS.md)    */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -543,7 +543,7 @@ void LineEdit::_notification(int p_what) {
 	switch (p_what) {
 #ifdef TOOLS_ENABLED
 		case NOTIFICATION_ENTER_TREE: {
-			if (get_tree()->is_editor_hint()) {
+			if (get_tree()->is_editor_hint() && !get_tree()->is_node_being_edited(this)) {
 				cursor_set_blink_enabled(EDITOR_DEF("text_editor/caret_blink", false));
 				cursor_set_blink_speed(EDITOR_DEF("text_editor/caret_blink_speed", 0.65));
 
@@ -655,8 +655,7 @@ void LineEdit::_notification(int p_what) {
 				font->draw_char(ci, Point2(x_ofs, y_ofs + font_ascent), cchar, next, selected ? font_color_selected : font_color);
 
 				if (char_ofs == cursor_pos && draw_caret) {
-					VisualServer::get_singleton()->canvas_item_add_rect(ci, Rect2(
-																					Point2(x_ofs, y_ofs), Size2(1, caret_height)),
+					VisualServer::get_singleton()->canvas_item_add_rect(ci, Rect2(Point2(x_ofs, y_ofs), Size2(1, caret_height)),
 							cursor_color);
 				}
 
@@ -665,8 +664,7 @@ void LineEdit::_notification(int p_what) {
 			}
 
 			if (char_ofs == cursor_pos && draw_caret) { //may be at the end
-				VisualServer::get_singleton()->canvas_item_add_rect(ci, Rect2(
-																				Point2(x_ofs, y_ofs), Size2(1, caret_height)),
+				VisualServer::get_singleton()->canvas_item_add_rect(ci, Rect2(Point2(x_ofs, y_ofs), Size2(1, caret_height)),
 						cursor_color);
 			}
 		} break;

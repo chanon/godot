@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2017 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2017 Godot Engine contributors (cf. AUTHORS.md)    */
+/* Copyright (c) 2007-2018 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2018 Godot Engine contributors (cf. AUTHORS.md)    */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -53,7 +53,12 @@ private:
 	static int _bio_gets(BIO *b, char *buf, int len);
 	static int _bio_puts(BIO *b, const char *str);
 
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+	static BIO_METHOD *_bio_method;
+#else
 	static BIO_METHOD _bio_method;
+#endif
+	static BIO_METHOD *_get_bio_method();
 
 	static bool _match_host_name(const char *name, const char *hostname);
 	static Error _match_common_name(const char *hostname, const X509 *server_cert);

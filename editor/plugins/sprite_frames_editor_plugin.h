@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2017 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2017 Godot Engine contributors (cf. AUTHORS.md)    */
+/* Copyright (c) 2007-2018 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2018 Godot Engine contributors (cf. AUTHORS.md)    */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -44,6 +44,7 @@ class SpriteFramesEditor : public PanelContainer {
 
 	Button *load;
 	Button *_delete;
+	Button *copy;
 	Button *paste;
 	Button *empty;
 	Button *empty2;
@@ -72,6 +73,7 @@ class SpriteFramesEditor : public PanelContainer {
 	void _load_pressed();
 	void _load_scene_pressed();
 	void _file_load_request(const DVector<String> &p_path, int p_at_pos = -1);
+	void _copy_pressed();
 	void _paste_pressed();
 	void _empty_pressed();
 	void _empty2_pressed();

@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2017 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2017 Godot Engine contributors (cf. AUTHORS.md)    */
+/* Copyright (c) 2007-2018 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2018 Godot Engine contributors (cf. AUTHORS.md)    */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -109,16 +109,16 @@ void Physics2DServerWrapMT::init() {
 	if (create_thread) {
 
 		step_sem = Semaphore::create();
-		print_line("CREATING PHYSICS 2D THREAD");
+		print_line("Creating physics 2D thread");
 		//OS::get_singleton()->release_rendering_thread();
 		if (create_thread) {
 			thread = Thread::create(_thread_callback, this);
-			print_line("STARTING PHYISICS 2D THREAD");
+			print_line("Starting physics 2D thread");
 		}
 		while (!step_thread_up) {
 			OS::get_singleton()->delay_usec(1000);
 		}
-		print_line("DONE PHYSICS 2D THREAD");
+		print_line("Done physics 2D thread");
 	} else {
 
 		physics_2d_server->init();
@@ -150,8 +150,8 @@ void Physics2DServerWrapMT::finish() {
 		memdelete(step_sem);
 }
 
-Physics2DServerWrapMT::Physics2DServerWrapMT(Physics2DServer *p_contained, bool p_create_thread)
-	: command_queue(p_create_thread) {
+Physics2DServerWrapMT::Physics2DServerWrapMT(Physics2DServer *p_contained, bool p_create_thread) :
+		command_queue(p_create_thread) {
 
 	physics_2d_server = p_contained;
 	create_thread = p_create_thread;

@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2017 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2017 Godot Engine contributors (cf. AUTHORS.md)    */
+/* Copyright (c) 2007-2018 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2018 Godot Engine contributors (cf. AUTHORS.md)    */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -504,7 +504,7 @@ void ProjectManager::_update_project_buttons() {
 		has_runnable_scene = true;
 		break;
 	}
-
+	show_btn->set_disabled(selected_list.size() < 1);
 	erase_btn->set_disabled(selected_list.size() < 1);
 	open_btn->set_disabled(selected_list.size() < 1);
 	run_btn->set_disabled(!has_runnable_scene);
@@ -571,6 +571,9 @@ void ProjectManager::_unhandled_input(const InputEvent &p_ev) {
 		const InputEventKey &k = p_ev.key;
 
 		if (!k.pressed)
+			return;
+
+		if (tabs->get_current_tab() != 0)
 			return;
 
 		bool scancode_handled = true;
@@ -855,6 +858,7 @@ void ProjectManager::_load_recent_projects() {
 
 		TextureFrame *tf = memnew(TextureFrame);
 		tf->set_texture(icon);
+		tf->set_v_size_flags(SIZE_EXPAND);
 		hb->add_child(tf);
 
 		VBoxContainer *vb = memnew(VBoxContainer);
@@ -936,7 +940,7 @@ void ProjectManager::_open_project_confirm() {
 	for (Map<String, String>::Element *E = selected_list.front(); E; E = E->next()) {
 		const String &selected = E->key();
 		String path = EditorSettings::get_singleton()->get("projects/" + selected);
-		print_line("OPENING: " + path + " (" + selected + ")");
+		print_line("Opening project: " + path + " (" + selected + ")");
 
 		List<String> args;
 
@@ -944,6 +948,10 @@ void ProjectManager::_open_project_confirm() {
 		args.push_back(path);
 
 		args.push_back("-editor");
+
+		if (OS::get_singleton()->is_disable_crash_handler()) {
+			args.push_back("--disable-crash-handler");
+		}
 
 		String exec = OS::get_singleton()->get_executable_path();
 
@@ -978,12 +986,16 @@ void ProjectManager::_run_project_confirm() {
 
 		const String &selected = E->key();
 		String path = EditorSettings::get_singleton()->get("projects/" + selected);
-		print_line("OPENING: " + path + " (" + selected + ")");
+		print_line("Opening project: " + path + " (" + selected + ")");
 
 		List<String> args;
 
 		args.push_back("-path");
 		args.push_back(path);
+
+		if (OS::get_singleton()->is_disable_crash_handler()) {
+			args.push_back("--disable-crash-handler");
+		}
 
 		String exec = OS::get_singleton()->get_executable_path();
 
@@ -1036,7 +1048,7 @@ void ProjectManager::_scan_dir(DirAccess *da, float pos, float total, List<Strin
 
 void ProjectManager::_scan_begin(const String &p_base) {
 
-	print_line("SCAN PROJECTS AT: " + p_base);
+	print_line("Scan project at: " + p_base);
 	List<String> projects;
 	DirAccess *da = DirAccess::create(DirAccess::ACCESS_FILESYSTEM);
 	da->change_dir(p_base);
@@ -1091,6 +1103,22 @@ void ProjectManager::_erase_project() {
 
 	erase_ask->set_text(TTR("Remove project from the list? (Folder contents will not be modified)"));
 	erase_ask->popup_centered_minsize();
+}
+
+void ProjectManager::_show_project() {
+	if (selected_list.size() == 0)
+		return;
+	for (Map<String, String>::Element *E = selected_list.front(); E; E = E->next()) {
+		const String &selected = E->key();
+		String path = EditorSettings::get_singleton()->get("projects/" + selected);
+		String conf = path + "/engine.cfg";
+		if (!FileAccess::exists(conf)) {
+			multi_open_ask->set_text(TTR("Can't show project"));
+			multi_open_ask->popup_centered_minsize();
+			return;
+		}
+		OS::get_singleton()->shell_open(String("file://") + path);
+	}
 }
 
 void ProjectManager::_exit_dialog() {
@@ -1165,6 +1193,7 @@ void ProjectManager::_bind_methods() {
 	ObjectTypeDB::bind_method("_new_project", &ProjectManager::_new_project);
 	ObjectTypeDB::bind_method("_erase_project", &ProjectManager::_erase_project);
 	ObjectTypeDB::bind_method("_erase_project_confirm", &ProjectManager::_erase_project_confirm);
+	ObjectTypeDB::bind_method("_show_project", &ProjectManager::_show_project);
 	ObjectTypeDB::bind_method("_exit_dialog", &ProjectManager::_exit_dialog);
 	ObjectTypeDB::bind_method("_load_recent_projects", &ProjectManager::_load_recent_projects);
 	ObjectTypeDB::bind_method("_on_project_created", &ProjectManager::_on_project_created);
@@ -1220,7 +1249,7 @@ ProjectManager::ProjectManager() {
 	String cp;
 	cp.push_back(0xA9);
 	cp.push_back(0);
-	OS::get_singleton()->set_window_title(_MKSTR(VERSION_NAME) + String(" - ") + TTR("Project Manager") + " - " + cp + " 2008-2017 Juan Linietsky, Ariel Manzur.");
+	OS::get_singleton()->set_window_title(_MKSTR(VERSION_NAME) + String(" - ") + TTR("Project Manager") + " - " + cp + " 2007-2018 Juan Linietsky, Ariel Manzur & Godot Contributors");
 
 	HBoxContainer *top_hb = memnew(HBoxContainer);
 	vb->add_child(top_hb);
@@ -1324,6 +1353,12 @@ ProjectManager::ProjectManager() {
 	tree_vb->add_child(erase);
 	erase->connect("pressed", this, "_erase_project");
 	erase_btn = erase;
+
+	Button *showinfilemanager = memnew(Button);
+	showinfilemanager->set_text(TTR("Show In File Manager"));
+	tree_vb->add_child(showinfilemanager);
+	showinfilemanager->connect("pressed", this, "_show_project");
+	show_btn = showinfilemanager;
 
 	tree_vb->add_spacer();
 

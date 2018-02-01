@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2017 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2017 Godot Engine contributors (cf. AUTHORS.md)    */
+/* Copyright (c) 2007-2018 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2018 Godot Engine contributors (cf. AUTHORS.md)    */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -175,8 +175,17 @@ void AudioDriverIphone::unlock() {
 };
 
 void AudioDriverIphone::finish() {
+	AURenderCallbackStruct callback;
+	zeromem(&callback, sizeof(AURenderCallbackStruct));
+	OSStatus result = AudioUnitSetProperty(audio_unit, kAudioUnitProperty_SetRenderCallback, kAudioUnitScope_Input, 0, &callback, sizeof(callback));
+	if (result != noErr) {
+		ERR_PRINT("AudioUnitSetProperty failed");
+	}
 
-	memdelete_arr(samples_in);
+	if (samples_in) {
+		memdelete_arr(samples_in);
+		samples_in = NULL;
+	}
 };
 
 AudioDriverIphone::AudioDriverIphone() {

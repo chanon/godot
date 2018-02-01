@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2017 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2017 Godot Engine contributors (cf. AUTHORS.md)    */
+/* Copyright (c) 2007-2018 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2018 Godot Engine contributors (cf. AUTHORS.md)    */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -227,8 +227,6 @@ static void _edit_files_with_filter(DirAccess *da, const List<String> &p_filters
 
 	String f = da->get_next();
 	while (f != "") {
-
-		print_line("HOHO: " + f);
 		if (da->current_is_dir())
 			dirs.push_back(f);
 		else
@@ -240,8 +238,6 @@ static void _edit_files_with_filter(DirAccess *da, const List<String> &p_filters
 	String r = da->get_current_dir().replace("\\", "/");
 	if (!r.ends_with("/"))
 		r += "/";
-
-	print_line("AT: " + r);
 
 	for (List<String>::Element *E = files.front(); E; E = E->next()) {
 		String fullpath = r + E->get();
@@ -509,6 +505,16 @@ bool EditorExportPlatform::is_debugging_enabled() const {
 void EditorExportPlatform::set_debugging_enabled(bool p_enabled) {
 
 	debugging_enabled = p_enabled;
+}
+
+int EditorExportPlatform::get_chmod_flags() const {
+
+	return chmod_flags;
+}
+
+void EditorExportPlatform::set_chmod_flags(int p_flags) {
+
+	chmod_flags = p_flags;
 }
 
 bool EditorExportPlatformPC::_set(const StringName &p_name, const Variant &p_value) {
@@ -924,17 +930,6 @@ Error EditorExportPlatform::export_project_files(EditorExportSaveFunction p_func
 			boot_splash = splash;
 		}
 	}
-	StringName custom_cursor;
-	{
-		String splash = Globals::get_singleton()->get("display/custom_mouse_cursor"); //avoid splash from being converted
-		splash = splash.strip_edges();
-		if (splash != String()) {
-			if (!splash.begins_with("res://"))
-				splash = "res://" + splash;
-			splash = splash.simplify_path();
-			custom_cursor = splash;
-		}
-	}
 
 	for (int i = 0; i < files.size(); i++) {
 
@@ -943,7 +938,7 @@ Error EditorExportPlatform::export_project_files(EditorExportSaveFunction p_func
 		String src = files[i];
 		Vector<uint8_t> buf;
 
-		if (src == boot_splash || src == custom_cursor)
+		if (src == boot_splash)
 			buf = get_exported_file_default(src); //bootsplash must be kept if used
 		else
 			buf = get_exported_file(src);
@@ -967,7 +962,6 @@ Error EditorExportPlatform::export_project_files(EditorExportSaveFunction p_func
 		if (remap_files.size()) {
 			Vector<String> remapsprop;
 			for (Map<StringName, StringName>::Element *E = remap_files.front(); E; E = E->next()) {
-				print_line("REMAP: " + String(E->key()) + " -> " + E->get());
 				remapsprop.push_back(E->key());
 				remapsprop.push_back(E->get());
 			}
@@ -1244,6 +1238,7 @@ Error EditorExportPlatform::save_pack(FileAccess *dst, bool p_make_bundles, int 
 EditorExportPlatform::EditorExportPlatform() {
 
 	debugging_enabled = true;
+	chmod_flags = 0;
 }
 
 Error EditorExportPlatformPC::export_project(const String &p_path, bool p_debug, int p_flags) {
@@ -1333,6 +1328,18 @@ Error EditorExportPlatformPC::export_project(const String &p_path, bool p_debug,
 	memdelete(src_exe);
 
 	Error err = export_mode == EXPORT_ZIP ? save_zip(dstfile, bundle) : save_pack(dst, bundle);
+	dst->close();
+
+	if (err == OK) {
+		int flags = get_chmod_flags();
+		if (flags) {
+			err = dst->_chmod(p_path, flags);
+			// If exporting from a platform with no chmod support (i.e., Windows), don't fail
+			if (err == ERR_UNAVAILABLE)
+				err = OK;
+		}
+	}
+
 	memdelete(dst);
 	return err;
 }

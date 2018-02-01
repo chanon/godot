@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2017 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2017 Godot Engine contributors (cf. AUTHORS.md)    */
+/* Copyright (c) 2007-2018 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2018 Godot Engine contributors (cf. AUTHORS.md)    */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -31,6 +31,7 @@
 #define OS_X11_H
 
 #include "context_gl_x11.h"
+#include "crash_handler_x11.h"
 #include "drivers/alsa/audio_driver_alsa.h"
 #include "drivers/pulseaudio/audio_driver_pulseaudio.h"
 #include "drivers/rtaudio/audio_driver_rtaudio.h"
@@ -54,6 +55,9 @@
 #include <X11/Xlib.h>
 #include <X11/extensions/Xrandr.h>
 #include <X11/keysym.h>
+#ifdef TOUCH_ENABLED
+#include <X11/extensions/XInput2.h>
+#endif
 
 // Hints for X11 fullscreen
 typedef struct {
@@ -121,6 +125,14 @@ class OS_X11 : public OS_Unix {
 	uint64_t last_click_ms;
 	unsigned int event_id;
 	uint32_t last_button_state;
+#ifdef TOUCH_ENABLED
+	struct {
+		int opcode;
+		Vector<int> devices;
+		XIEventMask event_mask;
+		Map<int, Point2i> state;
+	} touch;
+#endif
 
 	PhysicsServer *physics_server;
 	unsigned int get_mouse_button_state(unsigned int p_x11_state);
@@ -173,6 +185,8 @@ class OS_X11 : public OS_Unix {
 
 	Atom net_wm_icon;
 
+	CrashHandler crash_handler;
+
 	int audio_driver_index;
 	unsigned int capture_idle;
 	bool maximized;
@@ -194,6 +208,7 @@ protected:
 	virtual int get_audio_driver_count() const;
 	virtual const char *get_audio_driver_name(int p_driver) const;
 
+	virtual void initialize_core();
 	virtual void initialize(const VideoMode &p_desired, int p_video_driver, int p_audio_driver);
 	virtual void finalize();
 
@@ -203,6 +218,7 @@ public:
 	virtual String get_name();
 
 	virtual void set_cursor_shape(CursorShape p_shape);
+	virtual void set_custom_mouse_cursor(const RES &p_cursor, CursorShape p_shape, const Vector2 &p_hotspot);
 
 	void set_mouse_mode(MouseMode p_mode);
 	MouseMode get_mouse_mode() const;
@@ -265,6 +281,11 @@ public:
 	virtual bool is_vsync_enabled() const;
 
 	void run();
+
+	void disable_crash_handler();
+	bool is_disable_crash_handler() const;
+
+	virtual LatinKeyboardVariant get_latin_keyboard_variant() const;
 
 	OS_X11();
 };

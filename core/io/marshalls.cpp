@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2017 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2017 Godot Engine contributors (cf. AUTHORS.md)    */
+/* Copyright (c) 2007-2018 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2018 Godot Engine contributors (cf. AUTHORS.md)    */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -102,8 +102,8 @@ Error decode_variant(Variant &r_variant, const uint8_t *p_buffer, int p_len, int
 			}
 
 		} break;
-		// math types
 
+		// math types
 		case Variant::VECTOR2: {
 
 			ERR_FAIL_COND_V(len < (int)4 * 2, ERR_INVALID_DATA);
@@ -880,8 +880,8 @@ Error encode_variant(const Variant &p_variant, uint8_t *r_buffer, int &r_len) {
 				r_len++; //pad
 
 		} break;
-		// math types
 
+		// math types
 		case Variant::VECTOR2: {
 
 			if (buf) {

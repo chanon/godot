@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2017 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2017 Godot Engine contributors (cf. AUTHORS.md)    */
+/* Copyright (c) 2007-2018 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2018 Godot Engine contributors (cf. AUTHORS.md)    */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -31,6 +31,7 @@
 #define OS_WINDOWS_H
 
 #include "context_gl_win.h"
+#include "crash_handler_win.h"
 #include "os/input.h"
 #include "os/os.h"
 #include "servers/physics/physics_server_sw.h"
@@ -39,6 +40,7 @@
 
 #include "drivers/rtaudio/audio_driver_rtaudio.h"
 #include "drivers/unix/ip_unix.h"
+#include "drivers/wasapi/audio_driver_wasapi.h"
 #include "servers/audio/audio_server_sw.h"
 #include "servers/audio/sample_manager_sw.h"
 #include "servers/physics_2d/physics_2d_server_sw.h"
@@ -124,14 +126,20 @@ class OS_Windows : public OS {
 	bool force_quit;
 	uint32_t last_button_state;
 
+	HCURSOR cursors[CURSOR_MAX] = { NULL };
 	CursorShape cursor_shape;
 
 	InputDefault *input;
 	joystick_windows *joystick;
+#if WINVER >= 0x0601 // for windows 7
+	Map<int, Point2i> touch_state;
+#endif
 
 #ifdef RTAUDIO_ENABLED
 	AudioDriverRtAudio driver_rtaudio;
 #endif
+
+	CrashHandler crash_handler;
 
 	void _drag_event(int p_x, int p_y, int idx);
 	void _touch_event(bool p_pressed, int p_x, int p_y, int idx);
@@ -234,7 +242,7 @@ public:
 	virtual void delay_usec(uint32_t p_usec) const;
 	virtual uint64_t get_ticks_usec() const;
 
-	virtual Error execute(const String &p_path, const List<String> &p_arguments, bool p_blocking, ProcessID *r_child_id = NULL, String *r_pipe = NULL, int *r_exitcode = NULL);
+	virtual Error execute(const String &p_path, const List<String> &p_arguments, bool p_blocking, ProcessID *r_child_id = NULL, String *r_pipe = NULL, int *r_exitcode = NULL, bool read_stderr = false);
 	virtual Error kill(const ProcessID &p_pid);
 	virtual int get_process_ID() const;
 
@@ -245,6 +253,8 @@ public:
 	virtual String get_clipboard() const;
 
 	void set_cursor_shape(CursorShape p_shape);
+	void set_custom_mouse_cursor(const RES &p_cursor, CursorShape p_shape, const Vector2 &p_hotspot);
+	void GetMaskBitmaps(HBITMAP hSourceBitmap, COLORREF clrTransparent, OUT HBITMAP &hAndMaskBitmap, OUT HBITMAP &hXorMaskBitmap);
 	void set_icon(const Image &p_icon);
 
 	virtual String get_executable_path() const;
@@ -272,6 +282,11 @@ public:
 
 	virtual void set_use_vsync(bool p_enable);
 	virtual bool is_vsync_enabled() const;
+
+	virtual Error move_path_to_trash(String p_dir);
+
+	void disable_crash_handler();
+	bool is_disable_crash_handler() const;
 
 	OS_Windows(HINSTANCE _hInstance);
 	~OS_Windows();

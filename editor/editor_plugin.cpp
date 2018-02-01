@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2017 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2017 Godot Engine contributors (cf. AUTHORS.md)    */
+/* Copyright (c) 2007-2018 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2018 Godot Engine contributors (cf. AUTHORS.md)    */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -176,7 +176,12 @@ void EditorPlugin::make_visible(bool p_visible) {
 void EditorPlugin::edit(Object *p_object) {
 
 	if (get_script_instance() && get_script_instance()->has_method("edit")) {
-		get_script_instance()->call("edit", p_object);
+		Resource *obj = p_object ? p_object->cast_to<Resource>() : NULL;
+		if (obj) {
+			get_script_instance()->call("edit", Ref<Resource>(obj));
+		} else {
+			get_script_instance()->call("edit", p_object);
+		}
 	}
 }
 

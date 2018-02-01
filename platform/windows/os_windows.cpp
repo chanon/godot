@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2017 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2017 Godot Engine contributors (cf. AUTHORS.md)    */
+/* Copyright (c) 2007-2018 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2018 Godot Engine contributors (cf. AUTHORS.md)    */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -42,6 +42,7 @@
 #include "servers/audio/audio_server_sw.h"
 #include "servers/visual/visual_server_raster.h"
 #include "servers/visual/visual_server_wrap_mt.h"
+#include "scene/resources/texture.h"
 
 #include "globals.h"
 #include "io/marshalls.h"
@@ -170,6 +171,8 @@ static MemoryPoolDynamic *mempool_dynamic = NULL;
 
 void OS_Windows::initialize_core() {
 
+	crash_handler.initialize();
+
 	last_button_state = 0;
 
 	//RedirectIOToConsole();
@@ -229,6 +232,18 @@ bool OS_Windows::can_draw() const {
 
 void OS_Windows::_touch_event(bool p_pressed, int p_x, int p_y, int idx) {
 
+#if WINVER >= 0x0601 // for windows 7
+	// Defensive
+	if (touch_state.has(idx) == p_pressed)
+		return;
+
+	if (p_pressed) {
+		touch_state.insert(idx, Point2i(p_x, p_y));
+	} else {
+		touch_state.erase(idx);
+	}
+#endif
+
 	InputEvent event;
 	event.type = InputEvent::SCREEN_TOUCH;
 	event.ID = ++last_id;
@@ -245,6 +260,18 @@ void OS_Windows::_touch_event(bool p_pressed, int p_x, int p_y, int idx) {
 };
 
 void OS_Windows::_drag_event(int p_x, int p_y, int idx) {
+
+#if WINVER >= 0x0601 // for windows 7
+	Map<int, Point2i>::Element *curr = touch_state.find(idx);
+	// Defensive
+	if (!curr)
+		return;
+
+	if (curr->get() == Point2i(p_x, p_y))
+		return;
+
+	curr->get() = Point2i(p_x, p_y);
+#endif
 
 	InputEvent event;
 	event.type = InputEvent::SCREEN_DRAG;
@@ -290,6 +317,17 @@ LRESULT OS_Windows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 			return 0; // Return To The Message Loop
 		}
 
+		case WM_KILLFOCUS: {
+
+#if WINVER >= 0x0601 // for windows 7
+			// Release every touch to avoid sticky points
+			for (Map<int, Point2i>::Element *E = touch_state.front(); E; E = E->next()) {
+				_touch_event(false, E->get().x, E->get().y, E->key());
+			}
+			touch_state.clear();
+#endif
+		} break;
+
 		case WM_PAINT:
 
 			Main::force_redraw();
@@ -322,8 +360,6 @@ LRESULT OS_Windows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 			outside = true;
 			if (main_loop && mouse_mode != MOUSE_MODE_CAPTURED)
 				main_loop->notification(MainLoop::NOTIFICATION_WM_MOUSE_EXIT);
-			if (input)
-				input->set_mouse_in_window(false);
 
 		} break;
 		case WM_MOUSEMOVE: {
@@ -333,8 +369,6 @@ LRESULT OS_Windows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 
 				if (main_loop && mouse_mode != MOUSE_MODE_CAPTURED)
 					main_loop->notification(MainLoop::NOTIFICATION_WM_MOUSE_ENTER);
-				if (input)
-					input->set_mouse_in_window(true);
 
 				CursorShape c = cursor_shape;
 				cursor_shape = CURSOR_MAX;
@@ -400,6 +434,8 @@ LRESULT OS_Windows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 			}
 
 			input->set_mouse_pos(Point2(mm.x, mm.y));
+			mm.global_x = mm.x;
+			mm.global_y = mm.y;
 			mm.speed_x = input->get_mouse_speed().x;
 			mm.speed_y = input->get_mouse_speed().y;
 
@@ -427,6 +463,7 @@ LRESULT OS_Windows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 		case WM_MOUSEWHEEL:
 		case WM_MOUSEHWHEEL:
 		case WM_LBUTTONDBLCLK:
+		case WM_MBUTTONDBLCLK:
 		case WM_RBUTTONDBLCLK:
 			/*case WM_XBUTTONDOWN:
 		case WM_XBUTTONUP: */ {
@@ -485,6 +522,12 @@ LRESULT OS_Windows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 
 						mb.pressed = true;
 						mb.button_index = 2;
+						mb.doubleclick = true;
+					} break;
+					case WM_MBUTTONDBLCLK: {
+
+						mb.pressed = true;
+						mb.button_index = 3;
 						mb.doubleclick = true;
 					} break;
 					case WM_MOUSEWHEEL: {
@@ -548,7 +591,7 @@ LRESULT OS_Windows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 					mb.y = old_y;
 				}
 
-				if (uMsg != WM_MOUSEWHEEL) {
+				if (uMsg != WM_MOUSEWHEEL && uMsg != WM_MOUSEHWHEEL) {
 					if (mb.pressed) {
 
 						if (++pressrc > 0)
@@ -680,7 +723,7 @@ LRESULT OS_Windows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 							_drag_event(ti.x / 100, ti.y / 100, ti.dwID);
 						} else if (ti.dwFlags & (TOUCHEVENTF_UP | TOUCHEVENTF_DOWN)) {
 
-							_touch_event(ti.dwFlags & TOUCHEVENTF_DOWN != 0, ti.x / 100, ti.y / 100, ti.dwID);
+							_touch_event(ti.dwFlags & TOUCHEVENTF_DOWN, ti.x / 100, ti.y / 100, ti.dwID);
 						};
 					}
 					bHandled = TRUE;
@@ -1078,7 +1121,9 @@ void OS_Windows::initialize(const VideoMode &p_desired, int p_video_driver, int 
 	tme.dwHoverTime = HOVER_DEFAULT;
 	TrackMouseEvent(&tme);
 
-	//RegisterTouchWindow(hWnd, 0); // Windows 7
+#if WINVER >= 0x0601 // for windows 7
+	RegisterTouchWindow(hWnd, 0); // Windows 7
+#endif
 
 	_ensure_data_dir();
 
@@ -1186,6 +1231,9 @@ void OS_Windows::finalize() {
 
 	memdelete(joystick);
 	memdelete(input);
+#if WINVER >= 0x0601 // for windows 7
+	touch_state.clear();
+#endif
 
 	visual_server->finish();
 	memdelete(visual_server);
@@ -1895,11 +1943,125 @@ void OS_Windows::set_cursor_shape(CursorShape p_shape) {
 		IDC_HELP
 	};
 
-	SetCursor(LoadCursor(hInstance, win_cursors[p_shape]));
+	if (cursors[p_shape] != NULL) {
+		SetCursor(cursors[p_shape]);
+	} else {
+		SetCursor(LoadCursor(hInstance, win_cursors[p_shape]));
+	}
+
 	cursor_shape = p_shape;
 }
 
-Error OS_Windows::execute(const String &p_path, const List<String> &p_arguments, bool p_blocking, ProcessID *r_child_id, String *r_pipe, int *r_exitcode) {
+void OS_Windows::set_custom_mouse_cursor(const RES &p_cursor, CursorShape p_shape, const Vector2 &p_hotspot){
+	if (p_cursor.is_valid()) {
+		Ref<ImageTexture> texture = p_cursor;
+		Image image = texture->get_data();
+
+		UINT image_size = 32 * 32;
+		UINT size = sizeof(UINT) * image_size;
+
+		ERR_FAIL_COND(texture->get_width() != 32 || texture->get_height() != 32);
+
+		// Create the BITMAP with alpha channel
+		COLORREF *buffer = (COLORREF *)malloc(sizeof(COLORREF) * image_size);
+
+		for (UINT index = 0; index < image_size; index++) {
+			int column_index = floor(index / 32);
+			int row_index = index % 32;
+
+			Color pcColor = image.get_pixel(row_index, column_index);
+			*(buffer + index) = image.get_pixel(row_index, column_index).to_ARGB32();
+		}
+
+		// Using 4 channels, so 4 * 8 bits
+		HBITMAP bitmap = CreateBitmap(32, 32, 1, 4 * 8, buffer);
+		COLORREF clrTransparent = -1;
+
+		// Create the AND and XOR masks for the bitmap
+		HBITMAP hAndMask = NULL;
+		HBITMAP hXorMask = NULL;
+
+		GetMaskBitmaps(bitmap, clrTransparent, hAndMask, hXorMask);
+
+		if (NULL == hAndMask || NULL == hXorMask) {
+			return;
+		}
+
+		// Finally, create the icon
+		ICONINFO iconinfo = {0};
+		iconinfo.fIcon = FALSE;
+		iconinfo.xHotspot = p_hotspot.x;
+		iconinfo.yHotspot = p_hotspot.y;
+		iconinfo.hbmMask = hAndMask;
+		iconinfo.hbmColor = hXorMask;
+
+		cursors[p_shape] = CreateIconIndirect(&iconinfo);
+
+		if (p_shape == CURSOR_ARROW) {
+			SetCursor(cursors[p_shape]);
+		}
+
+		if (hAndMask != NULL) {
+			DeleteObject(hAndMask);
+		}
+
+		if (hXorMask != NULL) {
+		  DeleteObject(hXorMask);
+		}
+	}
+}
+
+void OS_Windows::GetMaskBitmaps(HBITMAP hSourceBitmap, COLORREF clrTransparent, OUT HBITMAP &hAndMaskBitmap, OUT HBITMAP &hXorMaskBitmap) {
+
+	// Get the system display DC
+	HDC hDC = GetDC(NULL);
+
+	// Create helper DC
+	HDC hMainDC = CreateCompatibleDC(hDC);
+	HDC hAndMaskDC = CreateCompatibleDC(hDC);
+	HDC hXorMaskDC = CreateCompatibleDC(hDC);
+
+	// Get the dimensions of the source bitmap
+	BITMAP bm;
+	GetObject(hSourceBitmap, sizeof(BITMAP), &bm);
+
+	// Create the mask bitmaps
+	hAndMaskBitmap = CreateCompatibleBitmap(hDC, bm.bmWidth, bm.bmHeight); // color
+	hXorMaskBitmap = CreateCompatibleBitmap(hDC, bm.bmWidth, bm.bmHeight); // color
+
+	// Release the system display DC
+	ReleaseDC(NULL, hDC);
+
+	// Select the bitmaps to helper DC
+	HBITMAP hOldMainBitmap = (HBITMAP)SelectObject(hMainDC, hSourceBitmap);
+	HBITMAP hOldAndMaskBitmap = (HBITMAP)SelectObject(hAndMaskDC, hAndMaskBitmap);
+	HBITMAP hOldXorMaskBitmap = (HBITMAP)SelectObject(hXorMaskDC, hXorMaskBitmap);
+
+	// Assign the monochrome AND mask bitmap pixels so that a pixels of the source bitmap
+	// with 'clrTransparent' will be white pixels of the monochrome bitmap
+	SetBkColor(hMainDC, clrTransparent);
+	BitBlt(hAndMaskDC, 0, 0, bm.bmWidth, bm.bmHeight, hMainDC, 0, 0, SRCCOPY);
+
+	// Assign the color XOR mask bitmap pixels so that a pixels of the source bitmap
+	// with 'clrTransparent' will be black and rest the pixels same as corresponding
+	// pixels of the source bitmap
+	SetBkColor(hXorMaskDC, RGB(0, 0, 0));
+	SetTextColor(hXorMaskDC, RGB(255, 255, 255));
+	BitBlt(hXorMaskDC, 0, 0, bm.bmWidth, bm.bmHeight, hAndMaskDC, 0, 0, SRCCOPY);
+	BitBlt(hXorMaskDC, 0, 0, bm.bmWidth, bm.bmHeight, hMainDC, 0,0, SRCAND);
+
+	// Deselect bitmaps from the helper DC
+	SelectObject(hMainDC, hOldMainBitmap);
+	SelectObject(hAndMaskDC, hOldAndMaskBitmap);
+	SelectObject(hXorMaskDC, hOldXorMaskBitmap);
+
+	// Delete the helper DC
+	DeleteDC(hXorMaskDC);
+	DeleteDC(hAndMaskDC);
+	DeleteDC(hMainDC);
+}
+
+Error OS_Windows::execute(const String &p_path, const List<String> &p_arguments, bool p_blocking, ProcessID *r_child_id, String *r_pipe, int *r_exitcode, bool read_stderr) {
 
 	if (p_blocking && r_pipe) {
 
@@ -2307,6 +2469,41 @@ bool OS_Windows::is_vsync_enabled() const {
 		return gl_context->is_using_vsync();
 
 	return true;
+}
+
+void OS_Windows::disable_crash_handler() {
+	crash_handler.disable();
+}
+
+bool OS_Windows::is_disable_crash_handler() const {
+	return crash_handler.is_disabled();
+}
+
+Error OS_Windows::move_path_to_trash(String p_dir) {
+	SHFILEOPSTRUCTA sf;
+	TCHAR *from = new TCHAR[p_dir.length() + 2];
+	strcpy(from, p_dir.utf8().get_data());
+	from[p_dir.length()] = 0;
+	from[p_dir.length() + 1] = 0;
+
+	sf.hwnd = hWnd;
+	sf.wFunc = FO_DELETE;
+	sf.pFrom = from;
+	sf.pTo = NULL;
+	sf.fFlags = FOF_ALLOWUNDO | FOF_NOCONFIRMATION;
+	sf.fAnyOperationsAborted = FALSE;
+	sf.hNameMappings = NULL;
+	sf.lpszProgressTitle = NULL;
+
+	int ret = SHFileOperation(&sf);
+	delete[] from;
+
+	if (ret) {
+		ERR_PRINTS("SHFileOperation error: " + itos(ret));
+		return FAILED;
+	}
+
+	return OK;
 }
 
 OS_Windows::OS_Windows(HINSTANCE _hInstance) {

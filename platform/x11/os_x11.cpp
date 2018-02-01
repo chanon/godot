@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2017 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2017 Godot Engine contributors (cf. AUTHORS.md)    */
+/* Copyright (c) 2007-2018 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2018 Godot Engine contributors (cf. AUTHORS.md)    */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -42,6 +42,7 @@
 
 #include "X11/Xatom.h"
 #include "X11/extensions/Xinerama.h"
+#include "scene/resources/texture.h"
 // ICCCM
 #define WM_NormalState 1L // window normal state
 #define WM_IconicState 3L // window minimized
@@ -67,6 +68,8 @@
 
 #undef CursorShape
 
+#include <X11/XKBlib.h>
+
 int OS_X11::get_video_driver_count() const {
 	return 1;
 }
@@ -88,6 +91,13 @@ const char *OS_X11::get_audio_driver_name(int p_driver) const {
 	AudioDriverSW *driver = AudioDriverManagerSW::get_driver(p_driver);
 	ERR_FAIL_COND_V(!driver, "");
 	return AudioDriverManagerSW::get_driver(p_driver)->get_name();
+}
+
+void OS_X11::initialize_core() {
+
+	crash_handler.initialize();
+
+	OS_Unix::initialize_core();
 }
 
 void OS_X11::initialize(const VideoMode &p_desired, int p_video_driver, int p_audio_driver) {
@@ -146,6 +156,48 @@ void OS_X11::initialize(const VideoMode &p_desired, int p_video_driver, int p_au
 			}
 		}
 	}
+
+#ifdef TOUCH_ENABLED
+	if (!XQueryExtension(x11_display, "XInputExtension", &touch.opcode, &event_base, &error_base)) {
+		fprintf(stderr, "XInput extension not available");
+	} else {
+		// 2.2 is the first release with multitouch
+		int xi_major = 2;
+		int xi_minor = 2;
+		if (XIQueryVersion(x11_display, &xi_major, &xi_minor) != Success) {
+			fprintf(stderr, "XInput 2.2 not available (server supports %d.%d)\n", xi_major, xi_minor);
+		} else {
+			int dev_count;
+			XIDeviceInfo *info = XIQueryDevice(x11_display, XIAllDevices, &dev_count);
+
+			for (int i = 0; i < dev_count; i++) {
+				XIDeviceInfo *dev = &info[i];
+				if (!dev->enabled)
+					continue;
+				if (!(dev->use == XIMasterPointer || dev->use == XIFloatingSlave))
+					continue;
+
+				bool direct_touch = false;
+				for (int j = 0; j < dev->num_classes; j++) {
+					if (dev->classes[j]->type == XITouchClass && ((XITouchClassInfo *)dev->classes[j])->mode == XIDirectTouch) {
+						direct_touch = true;
+						break;
+					}
+				}
+				if (direct_touch) {
+					touch.devices.push_back(dev->deviceid);
+					fprintf(stderr, "Using touch device: %s\n", dev->name);
+				}
+			}
+
+			XIFreeDeviceInfo(info);
+
+			if (!touch.devices.size()) {
+				fprintf(stderr, "No touch devices found\n");
+			}
+		}
+	}
+#endif
 
 	xim = XOpenIM(x11_display, NULL, NULL, NULL);
 
@@ -313,6 +365,34 @@ void OS_X11::initialize(const VideoMode &p_desired, int p_video_driver, int p_au
 
 	XChangeWindowAttributes(x11_display, x11_window, CWEventMask, &new_attr);
 
+#ifdef TOUCH_ENABLED
+	if (touch.devices.size()) {
+
+		// Must be alive after this block
+		static unsigned char mask_data[XIMaskLen(XI_LASTEVENT)] = {};
+
+		touch.event_mask.deviceid = XIAllDevices;
+		touch.event_mask.mask_len = sizeof(mask_data);
+		touch.event_mask.mask = mask_data;
+
+		XISetMask(touch.event_mask.mask, XI_TouchBegin);
+		XISetMask(touch.event_mask.mask, XI_TouchUpdate);
+		XISetMask(touch.event_mask.mask, XI_TouchEnd);
+		XISetMask(touch.event_mask.mask, XI_TouchOwnership);
+
+		XISelectEvents(x11_display, x11_window, &touch.event_mask, 1);
+
+		// Disabled by now since grabbing also blocks mouse events
+		// (they are received as extended events instead of standard events)
+		/*XIClearMask(touch.event_mask.mask, XI_TouchOwnership);
+
+		// Grab touch devices to avoid OS gesture interference
+		for (int i = 0; i < touch.devices.size(); ++i) {
+			XIGrabDevice(x11_display, touch.devices[i], x11_window, CurrentTime, None, XIGrabModeAsync, XIGrabModeAsync, False, &touch.event_mask);
+		}*/
+	}
+#endif
+
 	XClassHint *classHint;
 
 	/* set the titlebar name */
@@ -460,12 +540,16 @@ void OS_X11::finalize() {
 	spatial_sound_2d_server->finish();
 	memdelete(spatial_sound_2d_server);
 
-//if (debugger_connection_console) {
-//		memdelete(debugger_connection_console);
-//}
+	//if (debugger_connection_console) {
+	//	memdelete(debugger_connection_console);
+	//}
 
 #ifdef JOYDEV_ENABLED
 	memdelete(joystick);
+#endif
+#ifdef TOUCH_ENABLED
+	touch.devices.clear();
+	touch.state.clear();
 #endif
 	memdelete(input);
 
@@ -1287,6 +1371,73 @@ void OS_X11::process_xevents() {
 		XEvent event;
 		XNextEvent(x11_display, &event);
 
+#ifdef TOUCH_ENABLED
+		if (XGetEventData(x11_display, &event.xcookie)) {
+
+			if (event.xcookie.type == GenericEvent && event.xcookie.extension == touch.opcode) {
+
+				InputEvent input_event;
+				input_event.ID = ++event_id;
+				input_event.device = 0;
+
+				XIDeviceEvent *event_data = (XIDeviceEvent *)event.xcookie.data;
+				int index = event_data->detail;
+				Point2i pos = Point2i(event_data->event_x, event_data->event_y);
+
+				switch (event_data->evtype) {
+
+					case XI_TouchBegin: // Fall-through
+							// Disabled hand-in-hand with the grabbing
+							//XIAllowTouchEvents(x11_display, event_data->deviceid, event_data->detail, x11_window, XIAcceptTouch);
+
+					case XI_TouchEnd: {
+
+						bool is_begin = event_data->evtype == XI_TouchBegin;
+
+						input_event.type = InputEvent::SCREEN_TOUCH;
+						input_event.screen_touch.index = index;
+						input_event.screen_touch.x = pos.x;
+						input_event.screen_touch.y = pos.y;
+						input_event.screen_touch.pressed = is_begin;
+
+						if (is_begin) {
+							if (touch.state.has(index)) // Defensive
+								break;
+							touch.state[index] = pos;
+							input->parse_input_event(input_event);
+						} else {
+							if (!touch.state.has(index)) // Defensive
+								break;
+							touch.state.erase(index);
+							input->parse_input_event(input_event);
+						}
+					} break;
+
+					case XI_TouchUpdate: {
+
+						Map<int, Point2i>::Element *curr_pos_elem = touch.state.find(index);
+						if (!curr_pos_elem) // Defensive
+							break;
+
+						if (curr_pos_elem->value() != pos) {
+
+							input_event.type = InputEvent::SCREEN_DRAG;
+							input_event.screen_drag.index = index;
+							input_event.screen_drag.x = pos.x;
+							input_event.screen_drag.y = pos.y;
+							input_event.screen_drag.relative_x = pos.x - curr_pos_elem->value().x;
+							input_event.screen_drag.relative_y = pos.y - curr_pos_elem->value().y;
+							input->parse_input_event(input_event);
+
+							curr_pos_elem->value() = pos;
+						}
+					} break;
+				}
+			}
+		}
+		XFreeEventData(x11_display, &event.xcookie);
+#endif
+
 		switch (event.type) {
 			case Expose:
 				Main::force_redraw();
@@ -1304,16 +1455,12 @@ void OS_X11::process_xevents() {
 
 				if (main_loop && mouse_mode != MOUSE_MODE_CAPTURED)
 					main_loop->notification(MainLoop::NOTIFICATION_WM_MOUSE_EXIT);
-				if (input)
-					input->set_mouse_in_window(false);
 
 			} break;
 			case EnterNotify: {
 
 				if (main_loop && mouse_mode != MOUSE_MODE_CAPTURED)
 					main_loop->notification(MainLoop::NOTIFICATION_WM_MOUSE_ENTER);
-				if (input)
-					input->set_mouse_in_window(true);
 			} break;
 			case FocusIn:
 				minimized = false;
@@ -1324,6 +1471,12 @@ void OS_X11::process_xevents() {
 							ButtonPressMask | ButtonReleaseMask | PointerMotionMask,
 							GrabModeAsync, GrabModeAsync, x11_window, None, CurrentTime);
 				}
+#ifdef TOUCH_ENABLED
+// Grab touch devices to avoid OS gesture interference
+/*for (int i = 0; i < touch.devices.size(); ++i) {
+					XIGrabDevice(x11_display, touch.devices[i], x11_window, CurrentTime, None, XIGrabModeAsync, XIGrabModeAsync, False, &touch.event_mask);
+				}*/
+#endif
 				break;
 
 			case FocusOut:
@@ -1332,6 +1485,25 @@ void OS_X11::process_xevents() {
 					//dear X11, I try, I really try, but you never work, you do whathever you want.
 					XUngrabPointer(x11_display, CurrentTime);
 				}
+#ifdef TOUCH_ENABLED
+				// Ungrab touch devices so input works as usual while we are unfocused
+				/*for (int i = 0; i < touch.devices.size(); ++i) {
+					XIUngrabDevice(x11_display, touch.devices[i], CurrentTime);
+				}*/
+
+				// Release every pointer to avoid sticky points
+				for (Map<int, Point2i>::Element *E = touch.state.front(); E; E = E->next()) {
+
+					InputEvent input_event;
+					input_event.type = InputEvent::SCREEN_TOUCH;
+					input_event.screen_touch.index = E->key();
+					input_event.screen_touch.x = E->get().x;
+					input_event.screen_touch.y = E->get().y;
+					input_event.screen_touch.pressed = false;
+					input->parse_input_event(input_event);
+				}
+				touch.state.clear();
+#endif
 				break;
 
 			case ConfigureNotify:
@@ -1865,6 +2037,45 @@ void OS_X11::set_cursor_shape(CursorShape p_shape) {
 	current_cursor = p_shape;
 }
 
+void OS_X11::set_custom_mouse_cursor(const RES &p_cursor, CursorShape p_shape, const Vector2 &p_hotspot) {
+
+	if (p_cursor.is_valid()) {
+		Ref<ImageTexture> texture = p_cursor;
+		Image image = texture->get_data();
+
+		ERR_FAIL_COND(texture->get_width() != 32 || texture->get_height() != 32);
+
+		// Create the cursor structure
+		XcursorImage *cursor_image = XcursorImageCreate(texture->get_width(), texture->get_height());
+		XcursorUInt image_size = 32 * 32;
+		XcursorDim size = sizeof(XcursorPixel) * image_size;
+
+		cursor_image->version = 1;
+		cursor_image->size = size;
+		cursor_image->xhot = p_hotspot.x;
+		cursor_image->yhot = p_hotspot.y;
+
+		// allocate memory to contain the whole file
+		cursor_image->pixels = (XcursorPixel *)malloc(size);
+
+		for (XcursorPixel index = 0; index < image_size; index++) {
+			int column_index = floor(index / 32);
+			int row_index = index % 32;
+
+			*(cursor_image->pixels + index) = image.get_pixel(row_index, column_index).to_ARGB32();
+		}
+
+		ERR_FAIL_COND(cursor_image->pixels == NULL);
+
+		// Save it for a further usage
+		cursors[p_shape] = XcursorImageLoadCursor(x11_display, cursor_image);
+
+		if (p_shape == CURSOR_ARROW) {
+			XDefineCursor(x11_display, x11_window, cursors[p_shape]);
+		}
+	}
+}
+
 void OS_X11::release_rendering_thread() {
 
 	context_gl->release_current();
@@ -1992,6 +2203,38 @@ void OS_X11::set_context(int p_context) {
 	}
 }
 
+OS::LatinKeyboardVariant OS_X11::get_latin_keyboard_variant() const {
+
+	XkbDescRec *xkbdesc = XkbAllocKeyboard();
+	ERR_FAIL_COND_V(!xkbdesc, LATIN_KEYBOARD_QWERTY);
+
+	XkbGetNames(x11_display, XkbSymbolsNameMask, xkbdesc);
+	ERR_FAIL_COND_V(!xkbdesc->names, LATIN_KEYBOARD_QWERTY);
+	ERR_FAIL_COND_V(!xkbdesc->names->symbols, LATIN_KEYBOARD_QWERTY);
+
+	char *layout = XGetAtomName(x11_display, xkbdesc->names->symbols);
+	ERR_FAIL_COND_V(!layout, LATIN_KEYBOARD_QWERTY);
+
+	Vector<String> info = String(layout).split("+");
+	ERR_FAIL_INDEX_V(1, info.size(), LATIN_KEYBOARD_QWERTY);
+
+	if (info[1].find("colemak") != -1) {
+		return LATIN_KEYBOARD_COLEMAK;
+	} else if (info[1].find("qwertz") != -1) {
+		return LATIN_KEYBOARD_QWERTZ;
+	} else if (info[1].find("azerty") != -1) {
+		return LATIN_KEYBOARD_AZERTY;
+	} else if (info[1].find("qzerty") != -1) {
+		return LATIN_KEYBOARD_QZERTY;
+	} else if (info[1].find("dvorak") != -1) {
+		return LATIN_KEYBOARD_DVORAK;
+	} else if (info[1].find("neo") != -1) {
+		return LATIN_KEYBOARD_NEO;
+	}
+
+	return LATIN_KEYBOARD_QWERTY;
+}
+
 OS_X11::OS_X11() {
 
 #ifdef RTAUDIO_ENABLED
@@ -2014,4 +2257,12 @@ OS_X11::OS_X11() {
 	minimized = false;
 	xim_style = 0L;
 	mouse_mode = MOUSE_MODE_VISIBLE;
+}
+
+void OS_X11::disable_crash_handler() {
+	crash_handler.disable();
+}
+
+bool OS_X11::is_disable_crash_handler() const {
+	return crash_handler.is_disabled();
 }

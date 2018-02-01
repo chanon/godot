@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2017 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2017 Godot Engine contributors (cf. AUTHORS.md)    */
+/* Copyright (c) 2007-2018 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2018 Godot Engine contributors (cf. AUTHORS.md)    */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -127,7 +127,7 @@ void BakedLightEditor::_notification(int p_option) {
 
 				baker->update_octree_images(octree_texture, light_texture);
 				baker->update_octree_sampler(octree_sampler);
-//	print_line("sampler size: "+itos(octree_sampler.size()*4));
+				//print_line("sampler size: "+itos(octree_sampler.size()*4));
 
 #if 1
 				//debug

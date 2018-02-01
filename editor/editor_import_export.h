@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2017 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2017 Godot Engine contributors (cf. AUTHORS.md)    */
+/* Copyright (c) 2007-2018 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2018 Godot Engine contributors (cf. AUTHORS.md)    */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -86,6 +86,7 @@ public:
 
 private:
 	bool debugging_enabled;
+	int chmod_flags;
 
 protected:
 	bool _set(const StringName &p_name, const Variant &p_value);
@@ -148,6 +149,9 @@ public:
 
 	bool is_debugging_enabled() const;
 	void set_debugging_enabled(bool p_enabled);
+
+	int get_chmod_flags() const;
+	void set_chmod_flags(int p_flags);
 
 	Error export_project_files(EditorExportSaveFunction p_func, void *p_udata, bool p_make_bundles);
 

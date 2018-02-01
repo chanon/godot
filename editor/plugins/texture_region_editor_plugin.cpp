@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2017 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2017 Godot Engine contributors (cf. AUTHORS.md)    */
+/* Copyright (c) 2007-2018 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2018 Godot Engine contributors (cf. AUTHORS.md)    */
 /*                                                                       */
 /* Author: Mariano Suligoy                                               */
 /*                                                                       */
@@ -777,6 +777,7 @@ TextureRegionEditor::TextureRegionEditor(EditorNode *p_editor) {
 	edited_margin = -1;
 	drag_index = -1;
 	drag = false;
+	snap_mode = SNAP_NONE;
 
 	VBoxContainer *main_vb = memnew(VBoxContainer);
 	add_child(main_vb);

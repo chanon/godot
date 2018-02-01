@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2017 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2017 Godot Engine contributors (cf. AUTHORS.md)    */
+/* Copyright (c) 2007-2018 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2018 Godot Engine contributors (cf. AUTHORS.md)    */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -595,7 +595,7 @@ void SceneTree::set_editor_hint(bool p_enabled) {
 
 bool SceneTree::is_node_being_edited(const Node *p_node) const {
 
-	return editor_hint && edited_scene_root && edited_scene_root->is_a_parent_of(p_node);
+	return editor_hint && edited_scene_root && (edited_scene_root->is_a_parent_of(p_node) || edited_scene_root == p_node);
 }
 
 bool SceneTree::is_editor_hint() const {
@@ -738,6 +738,7 @@ Ref<Mesh> SceneTree::get_debug_contact_mesh() {
 		Vector3(0, 0, 1)
 	};
 
+	/* clang-format off */
 	int diamond_faces[8 * 3] = {
 		0, 2, 4,
 		0, 3, 4,
@@ -748,6 +749,7 @@ Ref<Mesh> SceneTree::get_debug_contact_mesh() {
 		1, 2, 5,
 		1, 3, 5,
 	};
+	/* clang-format on */
 
 	DVector<int> indices;
 	for (int i = 0; i < 8 * 3; i++)

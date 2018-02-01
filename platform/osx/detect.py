@@ -13,7 +13,7 @@ def get_name():
 
 def can_build():
 
-    if (sys.platform == "darwin" or os.environ.has_key("OSXCROSS_ROOT")):
+    if (sys.platform == "darwin" or ("OSXCROSS_ROOT" in os.environ)):
         return True
 
     return False
@@ -53,7 +53,7 @@ def configure(env):
 
         env.Append(CCFLAGS=['-g3', '-DDEBUG_ENABLED', '-DDEBUG_MEMORY_ENABLED'])
 
-    if (not os.environ.has_key("OSXCROSS_ROOT")):
+    if ("OSXCROSS_ROOT" not in os.environ):
         # regular native build
         if (env["bits"] == "64"):
             env.Append(CCFLAGS=['-arch', 'x86_64'])
@@ -76,8 +76,15 @@ def configure(env):
         else: # 64-bit, default
             basecmd = root + "/target/bin/x86_64-apple-" + env["osxcross_sdk"] + "-"
 
-        env['CC'] = basecmd + "cc"
-        env['CXX'] = basecmd + "c++"
+        ccache_path = os.environ.get("CCACHE")
+        if ccache_path == None:
+            env['CC'] = basecmd + "cc"
+            env['CXX'] = basecmd + "c++"
+        else:
+            # there aren't any ccache wrappers available for OS X cross-compile,
+            # to enable caching we need to prepend the path to the ccache binary
+            env['CC'] = ccache_path + " " + basecmd + "cc"
+            env['CXX'] = ccache_path + " " + basecmd + "c++"
         env['AR'] = basecmd + "ar"
         env['RANLIB'] = basecmd + "ranlib"
         env['AS'] = basecmd + "as"

@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2017 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2017 Godot Engine contributors (cf. AUTHORS.md)    */
+/* Copyright (c) 2007-2018 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2018 Godot Engine contributors (cf. AUTHORS.md)    */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -97,7 +97,7 @@ public:
 	enum TextureFlags {
 		TEXTURE_FLAG_MIPMAPS = 1, /// Enable automatic mipmap generation - when available
 		TEXTURE_FLAG_REPEAT = 2, /// Repeat texture (Tiling), otherwise Clamping
-		TEXTURE_FLAG_FILTER = 4, /// Create texure with linear (or available) filter
+		TEXTURE_FLAG_FILTER = 4, /// Create texture with linear (or available) filter
 		TEXTURE_FLAG_ANISOTROPIC_FILTER = 8,
 		TEXTURE_FLAG_CONVERT_TO_LINEAR = 16,
 		TEXTURE_FLAG_MIRRORED_REPEAT = 32, /// Repeat texture, with alternate sections mirrored
@@ -1067,12 +1067,6 @@ public:
 	};
 
 	virtual void canvas_item_material_set_shading_mode(RID p_material, CanvasItemShadingMode p_mode) = 0;
-
-	/* CURSOR */
-	virtual void cursor_set_rotation(float p_rotation, int p_cursor = 0) = 0; // radians
-	virtual void cursor_set_texture(RID p_texture, const Point2 &p_center_offset = Point2(0, 0), int p_cursor = 0, const Rect2 &p_region = Rect2()) = 0;
-	virtual void cursor_set_visible(bool p_visible, int p_cursor = 0) = 0;
-	virtual void cursor_set_pos(const Point2 &p_pos, int p_cursor = 0) = 0;
 
 	/* BLACK BARS */
 

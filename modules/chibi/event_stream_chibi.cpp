@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2017 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2017 Godot Engine contributors (cf. AUTHORS.md)    */
+/* Copyright (c) 2007-2018 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2018 Godot Engine contributors (cf. AUTHORS.md)    */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -683,8 +683,8 @@ float EventStreamPlaybackChibi::get_last_note_time(int p_channel) const {
 	return v;
 }
 
-EventStreamPlaybackChibi::EventStreamPlaybackChibi(Ref<EventStreamChibi> p_stream)
-	: mixer(_get_mixer()) {
+EventStreamPlaybackChibi::EventStreamPlaybackChibi(Ref<EventStreamChibi> p_stream) :
+		mixer(_get_mixer()) {
 
 	stream = p_stream;
 	player = memnew(CPPlayer(&mixer, &p_stream->song));

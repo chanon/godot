@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2017 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2017 Godot Engine contributors (cf. AUTHORS.md)    */
+/* Copyright (c) 2007-2018 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2018 Godot Engine contributors (cf. AUTHORS.md)    */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -116,6 +116,9 @@ class ScriptEditor : public VBoxContainer {
 		FILE_SAVE_THEME,
 		FILE_SAVE_THEME_AS,
 		FILE_CLOSE,
+		FILE_CLOSE_OTHERS,
+		FILE_CLOSE_ALL,
+		FILE_COPY_SCRIPT_PATH,
 		CLOSE_DOCS,
 		EDIT_UNDO,
 		EDIT_REDO,
@@ -123,6 +126,8 @@ class ScriptEditor : public VBoxContainer {
 		EDIT_COPY,
 		EDIT_PASTE,
 		EDIT_SELECT_ALL,
+		EDIT_UPPERCASE,
+		EDIT_LOWERCASE,
 		EDIT_COMPLETE,
 		EDIT_AUTO_INDENT,
 		EDIT_TRIM_TRAILING_WHITESAPCE,
@@ -188,7 +193,11 @@ class ScriptEditor : public VBoxContainer {
 	EditorHelpSearch *help_search_dialog;
 
 	ItemList *script_list;
+	PopupMenu *script_list_menu;
 	HSplitContainer *script_split;
+	ItemList *members_overview;
+	bool members_overview_enabled;
+	VSplitContainer *list_split;
 	TabContainer *tab_container;
 	EditorFileDialog *file_dialog;
 	GotoLineDialog *goto_line_dialog;
@@ -236,7 +245,10 @@ class ScriptEditor : public VBoxContainer {
 	void _close_tab(int p_idx);
 
 	void _close_current_tab();
+	void _close_other_tabs(int idx);
+	void _close_all_tab(int except);
 	void _close_docs_tab();
+	void _copy_script_path();
 
 	bool grab_focus_block;
 
@@ -272,9 +284,15 @@ class ScriptEditor : public VBoxContainer {
 	void _editor_settings_changed();
 	void _autosave_scripts();
 
+	void _update_members_overview_visibility();
+	void _update_members_overview();
+	void _members_overview_selected(int p_idx);
+
 	void _update_script_names();
 
 	void _script_selected(int p_idx);
+
+	void _script_rmb_selected(int p_idx, const Vector2 &p_pos);
 
 	void _find_scripts(Node *p_base, Node *p_current, Set<Ref<Script> > &used);
 

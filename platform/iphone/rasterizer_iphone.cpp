@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2017 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2017 Godot Engine contributors (cf. AUTHORS.md)    */
+/* Copyright (c) 2007-2018 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2018 Godot Engine contributors (cf. AUTHORS.md)    */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -1502,7 +1502,7 @@ void RasterizerIPhone::begin_frame() {
 	glClearColor(0, 0, 1, 1);
 	glClear(GL_COLOR_BUFFER_BIT);
 
-/* nehe ?*/
+	/* nehe ?*/
 
 #if 0
 	glViewport(0,0,window_size.width,window_size.height);						// Reset The Current Viewport
@@ -2210,8 +2210,14 @@ void RasterizerIPhone::canvas_draw_line(const Point2 &p_from, const Point2 &p_to
 	};
 
 	float colors[] = {
-		p_color.r, p_color.g, p_color.b, p_color.a,
-		p_color.r, p_color.g, p_color.b, p_color.a,
+		p_color.r,
+		p_color.g,
+		p_color.b,
+		p_color.a,
+		p_color.r,
+		p_color.g,
+		p_color.b,
+		p_color.a,
 	};
 	glLineWidth(p_width);
 	_draw_primitive(2, verts, 0, colors, 0);

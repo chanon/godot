@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2017 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2017 Godot Engine contributors (cf. AUTHORS.md)    */
+/* Copyright (c) 2007-2018 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2018 Godot Engine contributors (cf. AUTHORS.md)    */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -197,7 +197,7 @@ public:
 
 	virtual String get_installed_templates_path() const { return ""; }
 	virtual String get_executable_path() const;
-	virtual Error execute(const String &p_path, const List<String> &p_arguments, bool p_blocking, ProcessID *r_child_id = NULL, String *r_pipe = NULL, int *r_exitcode = NULL) = 0;
+	virtual Error execute(const String &p_path, const List<String> &p_arguments, bool p_blocking, ProcessID *r_child_id = NULL, String *r_pipe = NULL, int *r_exitcode = NULL, bool read_stderr = false) = 0;
 	virtual Error kill(const ProcessID &p_pid) = 0;
 	virtual int get_process_ID() const;
 
@@ -285,6 +285,9 @@ public:
 
 	bool is_stdout_verbose() const;
 
+	virtual void disable_crash_handler() {}
+	virtual bool is_disable_crash_handler() const { return false; }
+
 	enum CursorShape {
 		CURSOR_ARROW,
 		CURSOR_IBEAM,
@@ -311,6 +314,7 @@ public:
 	virtual void hide_virtual_keyboard();
 
 	virtual void set_cursor_shape(CursorShape p_shape) = 0;
+	virtual void set_custom_mouse_cursor(const RES &p_cursor, CursorShape p_shape, const Vector2 &p_hotspot) = 0;
 
 	virtual bool get_swap_ok_cancel() { return false; }
 	virtual void dump_memory_to_file(const char *p_file);
@@ -330,6 +334,8 @@ public:
 	String get_safe_application_name() const;
 	virtual String get_data_dir() const;
 	virtual String get_resource_dir() const;
+
+	virtual Error move_path_to_trash(String p_dir) { return FAILED; }
 
 	enum SystemDir {
 		SYSTEM_DIR_DESKTOP,
@@ -399,6 +405,7 @@ public:
 		LATIN_KEYBOARD_QZERTY,
 		LATIN_KEYBOARD_DVORAK,
 		LATIN_KEYBOARD_NEO,
+		LATIN_KEYBOARD_COLEMAK,
 	};
 
 	virtual LatinKeyboardVariant get_latin_keyboard_variant() const;

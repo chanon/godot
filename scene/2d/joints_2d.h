@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2017 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2017 Godot Engine contributors (cf. AUTHORS.md)    */
+/* Copyright (c) 2007-2018 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2018 Godot Engine contributors (cf. AUTHORS.md)    */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -32,11 +32,14 @@
 
 #include "node_2d.h"
 
+class PhysicsBody2D;
+
 class Joint2D : public Node2D {
 
 	OBJ_TYPE(Joint2D, Node2D);
 
 	RID joint;
+	RID ba, bb;
 
 	NodePath a;
 	NodePath b;
@@ -45,10 +48,10 @@ class Joint2D : public Node2D {
 	bool exclude_from_collision;
 
 protected:
-	void _update_joint();
+	void _update_joint(bool p_only_free = false);
 
 	void _notification(int p_what);
-	virtual RID _configure_joint() = 0;
+	virtual RID _configure_joint(PhysicsBody2D *body_a, PhysicsBody2D *body_b) = 0;
 
 	static void _bind_methods();
 
@@ -77,7 +80,7 @@ class PinJoint2D : public Joint2D {
 
 protected:
 	void _notification(int p_what);
-	virtual RID _configure_joint();
+	virtual RID _configure_joint(PhysicsBody2D *body_a, PhysicsBody2D *body_b);
 	static void _bind_methods();
 
 public:
@@ -96,7 +99,7 @@ class GrooveJoint2D : public Joint2D {
 
 protected:
 	void _notification(int p_what);
-	virtual RID _configure_joint();
+	virtual RID _configure_joint(PhysicsBody2D *body_a, PhysicsBody2D *body_b);
 	static void _bind_methods();
 
 public:
@@ -120,7 +123,7 @@ class DampedSpringJoint2D : public Joint2D {
 
 protected:
 	void _notification(int p_what);
-	virtual RID _configure_joint();
+	virtual RID _configure_joint(PhysicsBody2D *body_a, PhysicsBody2D *body_b);
 	static void _bind_methods();
 
 public:

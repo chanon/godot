@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2017 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2017 Godot Engine contributors (cf. AUTHORS.md)    */
+/* Copyright (c) 2007-2018 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2018 Godot Engine contributors (cf. AUTHORS.md)    */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -117,7 +117,6 @@ static String unescape_cmdline(const String &p_str) {
 }
 
 //#define DEBUG_INIT
-
 #ifdef DEBUG_INIT
 #define MAIN_PRINT(m_txt) print_line(m_txt)
 #else
@@ -126,15 +125,19 @@ static String unescape_cmdline(const String &p_str) {
 
 void Main::print_help(const char *p_binary) {
 
-	OS::get_singleton()->print(VERSION_FULL_NAME " (c) 2008-2017 Juan Linietsky, Ariel Manzur.\n");
-	OS::get_singleton()->print("Usage: %s [options] [scene]\n", p_binary);
+	OS::get_singleton()->print(VERSION_FULL_NAME " - https://godotengine.org\n");
+	OS::get_singleton()->print("(c) 2007-2018 Juan Linietsky, Ariel Manzur.\n");
+	OS::get_singleton()->print("(c) 2014-2018 Godot Engine contributors.\n");
+	OS::get_singleton()->print("\n");
+	OS::get_singleton()->print("Usage: %s [options] [path to scene or 'engine.cfg' file]\n", p_binary);
+	OS::get_singleton()->print("\n");
 	OS::get_singleton()->print("Options:\n");
-	OS::get_singleton()->print("\t-path [dir] : Path to a game, containing engine.cfg\n");
+	OS::get_singleton()->print("\t-h, -help : Print these usage instructions.\n");
+	OS::get_singleton()->print("\t-path <dir> : Path to a game, containing engine.cfg.\n");
 #ifdef TOOLS_ENABLED
-	OS::get_singleton()->print("\t-e,-editor : Bring up the editor instead of running the scene.\n");
+	OS::get_singleton()->print("\t-e, -editor : Bring up the editor instead of running the scene.\n");
 #endif
-	OS::get_singleton()->print("\t-test [test] : Run a test.\n");
-	OS::get_singleton()->print("\t\t(");
+	OS::get_singleton()->print("\t-test <test> : Run a test (");
 	const char **test_names = tests_get_names();
 	const char *coma = "";
 	while (*test_names) {
@@ -143,48 +146,50 @@ void Main::print_help(const char *p_binary) {
 		test_names++;
 		coma = ", ";
 	}
-	OS::get_singleton()->print(")\n");
+	OS::get_singleton()->print(").\n");
 
-	OS::get_singleton()->print("\t-r WIDTHxHEIGHT\t : Request Window Resolution\n");
-	OS::get_singleton()->print("\t-p XxY\t : Request Window Position\n");
-	OS::get_singleton()->print("\t-f\t\t : Request Fullscreen\n");
-	OS::get_singleton()->print("\t-mx\t\t Request Maximized\n");
-	OS::get_singleton()->print("\t-w\t\t Request Windowed\n");
-	OS::get_singleton()->print("\t-vd DRIVER\t : Video Driver (");
+	OS::get_singleton()->print("\t-r <width>x<height> : Request window resolution.\n");
+	OS::get_singleton()->print("\t-p <X>x<Y> : Request window position.\n");
+	OS::get_singleton()->print("\t-f : Request fullscreen.\n");
+	OS::get_singleton()->print("\t-mx : Request maximized.\n");
+	OS::get_singleton()->print("\t-w : Request windowed.\n");
+	OS::get_singleton()->print("\t-vd <driver> : Video driver (");
 	for (int i = 0; i < OS::get_singleton()->get_video_driver_count(); i++) {
 
 		if (i != 0)
 			OS::get_singleton()->print(", ");
 		OS::get_singleton()->print("%s", OS::get_singleton()->get_video_driver_name(i));
 	}
-	OS::get_singleton()->print(")\n");
-	OS::get_singleton()->print("\t-ldpi\t : Force low-dpi mode (OSX Only)\n");
+	OS::get_singleton()->print(").\n");
+	OS::get_singleton()->print("\t-ldpi : Force low-dpi mode (OSX only).\n");
 
-	OS::get_singleton()->print("\t-ad DRIVER\t : Audio Driver (");
+	OS::get_singleton()->print("\t-ad <driver> : Audio driver (");
 	for (int i = 0; i < OS::get_singleton()->get_audio_driver_count(); i++) {
 
 		if (i != 0)
 			OS::get_singleton()->print(", ");
 		OS::get_singleton()->print("%s", OS::get_singleton()->get_audio_driver_name(i));
 	}
-	OS::get_singleton()->print(")\n");
-	OS::get_singleton()->print("\t-rthread <mode>\t : Render Thread Mode ('unsafe', 'safe', 'separate').\n");
-	OS::get_singleton()->print("\t-s,-script [script] : Run a script.\n");
-	OS::get_singleton()->print("\t-d,-debug : Debug (local stdout debugger).\n");
-	OS::get_singleton()->print("\t-rdebug ADDRESS : Remote debug (<ip>:<port> host address).\n");
-	OS::get_singleton()->print("\t-fdelay [msec]: Simulate high CPU load (delay each frame by [msec]).\n");
-	OS::get_singleton()->print("\t-timescale [msec]: Simulate high CPU load (delay each frame by [msec]).\n");
-	OS::get_singleton()->print("\t-bp : breakpoint list as source::line comma separated pairs, no spaces (%%20,%%2C,etc instead).\n");
-	OS::get_singleton()->print("\t-v : Verbose stdout mode\n");
-	OS::get_singleton()->print("\t-lang [locale]: Use a specific locale\n");
-	OS::get_singleton()->print("\t-rfs <host/ip>[:<port>] : Remote FileSystem.\n");
-	OS::get_singleton()->print("\t-rfs_pass <password> : Password for Remote FileSystem.\n");
+	OS::get_singleton()->print(").\n");
+	OS::get_singleton()->print("\t-rthread <mode> : Render thread mode ('unsafe', 'safe', 'separate').\n");
+	OS::get_singleton()->print("\t-s, -script <script> : Run a script.\n");
+	OS::get_singleton()->print("\t-d, -debug : Debug (local stdout debugger).\n");
+	OS::get_singleton()->print("\t-rdebug <address> : Remote debug (<ip>:<port> host address).\n");
+	OS::get_singleton()->print("\t-fdelay <msec> : Simulate high CPU load (delay each frame by [msec]).\n");
+	OS::get_singleton()->print("\t-timescale <msec> : Define custom timescale (time between frames in [msec]).\n");
+	OS::get_singleton()->print("\t-bp : Breakpoint list as source::line comma separated pairs, no spaces (%%20 instead).\n");
+	OS::get_singleton()->print("\t-v : Verbose stdout mode.\n");
+	OS::get_singleton()->print("\t-lang <locale> : Use a specific locale.\n");
+	OS::get_singleton()->print("\t-rfs <host/ip>[:<port>] : Remote filesystem.\n");
+	OS::get_singleton()->print("\t-rfs_pass <password> : Password for remote filesystem.\n");
+	OS::get_singleton()->print("\t-dch : Disable crash handler when supported by the platform code.\n");
 #ifdef TOOLS_ENABLED
-	OS::get_singleton()->print("\t-doctool FILE: Dump the whole engine api to FILE in XML format. If FILE exists, it will be merged.\n");
-	OS::get_singleton()->print("\t-nodocbase: Disallow dump the base types (used with -doctool).\n");
-	OS::get_singleton()->print("\t-optimize FILE Save an optimized copy of scene to FILE.\n");
-	OS::get_singleton()->print("\t-optimize_preset [preset] Use a given preset for optimization.\n");
-	OS::get_singleton()->print("\t-export [target] Export the project using given export target.\n");
+	OS::get_singleton()->print("\t-doctool <file> : Dump the whole engine api to <file> in XML format. If <file> exists, it will be merged.\n");
+	OS::get_singleton()->print("\t-nodocbase : Disallow dump the base types (used with -doctool).\n");
+	OS::get_singleton()->print("\t-optimize <file> : Save an optimized copy of scene to <file>.\n");
+	OS::get_singleton()->print("\t-optimize_preset <preset> : Use a given preset for optimization.\n");
+	OS::get_singleton()->print("\t-export <target> : Export the project using given export target.\n");
+	OS::get_singleton()->print("\t-export_debug : Use together with -export, enables debug mode for the template.\n");
 #endif
 }
 
@@ -211,6 +216,8 @@ Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_ph
 	translation_server = memnew(TranslationServer);
 	performance = memnew(Performance);
 	globals->add_singleton(Globals::Singleton("Performance", performance));
+
+	GLOBAL_DEF("application/crash_handler_message", String("Please include this when reporting the bug on https://github.com/godotengine/godot/issues"));
 
 	MAIN_PRINT("Main: Parse CMDLine");
 
@@ -282,7 +289,7 @@ Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_ph
 		if (I->get() == "-noop") {
 
 			// no op
-		} else if (I->get() == "-h" || I->get() == "--help" || I->get() == "/?") { // resolution
+		} else if (I->get() == "-h" || I->get() == "-help" || I->get() == "--help" || I->get() == "/?") { // resolution
 
 			goto error;
 
@@ -536,6 +543,8 @@ Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_ph
 			} else {
 				goto error;
 			}
+		} else if (I->get() == "-dch") {
+			OS::get_singleton()->disable_crash_handler();
 		} else {
 
 			//test for game path
@@ -944,20 +953,6 @@ Error Main::setup2(Thread::ID p_main_tid_override) {
 	register_scene_types();
 	register_server_types();
 
-	GLOBAL_DEF("display/custom_mouse_cursor", String());
-	GLOBAL_DEF("display/custom_mouse_cursor_hotspot", Vector2());
-	Globals::get_singleton()->set_custom_property_info("display/custom_mouse_cursor", PropertyInfo(Variant::STRING, "display/custom_mouse_cursor", PROPERTY_HINT_FILE, "*.png,*.webp"));
-
-	if (String(Globals::get_singleton()->get("display/custom_mouse_cursor")) != String()) {
-
-		//print_line("use custom cursor");
-		Ref<Texture> cursor = ResourceLoader::load(Globals::get_singleton()->get("display/custom_mouse_cursor"));
-		if (cursor.is_valid()) {
-			//	print_line("loaded ok");
-			Vector2 hotspot = Globals::get_singleton()->get("display/custom_mouse_cursor_hotspot");
-			Input::get_singleton()->set_custom_mouse_cursor(cursor, hotspot);
-		}
-	}
 #ifdef TOOLS_ENABLED
 	EditorNode::register_editor_types();
 #endif

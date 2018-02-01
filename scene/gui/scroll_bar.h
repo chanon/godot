@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2017 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2017 Godot Engine contributors (cf. AUTHORS.md)    */
+/* Copyright (c) 2007-2018 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2018 Godot Engine contributors (cf. AUTHORS.md)    */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -110,8 +110,8 @@ class HScrollBar : public ScrollBar {
 	OBJ_TYPE(HScrollBar, ScrollBar);
 
 public:
-	HScrollBar()
-		: ScrollBar(HORIZONTAL) { set_v_size_flags(0); }
+	HScrollBar() :
+			ScrollBar(HORIZONTAL) { set_v_size_flags(0); }
 };
 
 class VScrollBar : public ScrollBar {
@@ -119,8 +119,8 @@ class VScrollBar : public ScrollBar {
 	OBJ_TYPE(VScrollBar, ScrollBar);
 
 public:
-	VScrollBar()
-		: ScrollBar(VERTICAL) { set_h_size_flags(0); }
+	VScrollBar() :
+			ScrollBar(VERTICAL) { set_h_size_flags(0); }
 };
 
 #endif

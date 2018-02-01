@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2017 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2017 Godot Engine contributors (cf. AUTHORS.md)    */
+/* Copyright (c) 2007-2018 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2018 Godot Engine contributors (cf. AUTHORS.md)    */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -44,6 +44,7 @@ class ScriptCreateDialog : public ConfirmationDialog {
 	Label *path_error_label;
 	LineEdit *parent_name;
 	OptionButton *language_menu;
+	OptionButton *template_menu;
 	LineEdit *file_path;
 	EditorFileDialog *file_browse;
 	CheckButton *internal;
@@ -52,9 +53,11 @@ class ScriptCreateDialog : public ConfirmationDialog {
 	bool path_valid;
 	bool create_new;
 	String initial_bp;
+	int template_select;
 
 	void _path_changed(const String &p_path = String());
 	void _lang_changed(int l = 0);
+	void _template_changed(int l = 0);
 	void _built_in_pressed();
 	bool _validate(const String &p_strin);
 	void _class_name_changed(const String &p_name);

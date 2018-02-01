@@ -98,17 +98,7 @@ def is_active():
 
 def get_name():
     return "Windows"
-    if (os.getenv("MINGW32_PREFIX")):
-        mingw32=os.getenv("MINGW32_PREFIX")
-        mingw = mingw32
-    if (os.getenv("MINGW64_PREFIX")):
-        mingw64=os.getenv("MINGW64_PREFIX")
 
-
-    return [
-        ('mingw_prefix','Mingw Prefix',mingw32),
-        ('mingw_prefix_64','Mingw Prefix 64 bits',mingw64),
-    ]
 
 def can_build():
 
@@ -176,6 +166,8 @@ def get_opts():
     return [
         ('mingw_prefix', 'Mingw Prefix', mingw32),
         ('mingw_prefix_64', 'Mingw Prefix 64 bits', mingw64),
+        # Targeted Windows version: Vista (and later)
+        ('target_win_version', 'Targeted Windows version, >= 0x0600 (Vista)', '0x0600'),
     ]
 
 
@@ -210,16 +202,13 @@ def configure(env):
 
     env.Append(CPPPATH=['#platform/windows'])
 
-    # Targeted Windows version: Vista (and later)
-    winver = "0x0600" # Windows Vista is the minimum target for windows builds
-
     env['is_mingw'] = False
     if (os.name == "nt" and os.getenv("VCINSTALLDIR")):
         # build using visual studio
         env['ENV']['TMP'] = os.environ['TMP']
         env.Append(CPPPATH=['#platform/windows/include'])
         env.Append(LIBPATH=['#platform/windows/lib'])
-        env.Append(CCFLAGS=['/DWINVER=%s' % winver, '/D_WIN32_WINNT=%s' % winver])
+        env.Append(CCFLAGS=['/DWINVER=%s' % env['target_win_version'], '/D_WIN32_WINNT=%s' % env['target_win_version']])
 
         if (env["target"] == "release"):
 
@@ -240,7 +229,7 @@ def configure(env):
 
         elif (env["target"] == "debug"):
 
-            env.Append(CCFLAGS=['/Z7', '/DDEBUG_ENABLED', '/DDEBUG_MEMORY_ENABLED', '/DD3D_DEBUG_INFO', '/Od'])
+            env.Append(CCFLAGS=['/Z7', '/DDEBUG_ENABLED', '/DDEBUG_MEMORY_ENABLED', '/DD3D_DEBUG_INFO', '/Od', '/EHsc'])
             env.Append(LINKFLAGS=['/SUBSYSTEM:CONSOLE'])
             env.Append(LINKFLAGS=['/DEBUG'])
 
@@ -280,7 +269,7 @@ def configure(env):
 
         # Note: this detection/override code from here onward should be here instead of in SConstruct because it's platform and compiler specific (MSVC/Windows)
         if(env["bits"] != "default"):
-            print "Error: bits argument is disabled for MSVC"
+            print("Error: bits argument is disabled for MSVC")
             print ("Bits argument is not supported for MSVC compilation. Architecture depends on the Native/Cross Compile Tools Prompt/Developer Console (or Visual Studio settings)"
                    + " that is being used to run SCons. As a consequence, bits argument is disabled. Run scons again without bits argument (example: scons p=windows) and SCons will attempt to detect what MSVC compiler"
                    + " will be executed and inform you.")
@@ -291,16 +280,16 @@ def configure(env):
         env["bits"] = "32"
         env["x86_libtheora_opt_vc"] = True
 
-        print "Detected MSVC compiler: " + compiler_version_str
+        print("Detected MSVC compiler: " + compiler_version_str)
         # If building for 64bit architecture, disable assembly optimisations for 32 bit builds (theora as of writting)... vc compiler for 64bit can not compile _asm
         if(compiler_version_str == "amd64" or compiler_version_str == "x86_amd64"):
             env["bits"] = "64"
             env["x86_libtheora_opt_vc"] = False
-            print "Compiled program architecture will be a 64 bit executable (forcing bits=64)."
+            print("Compiled program architecture will be a 64 bit executable (forcing bits=64).")
         elif (compiler_version_str == "x86" or compiler_version_str == "amd64_x86"):
-            print "Compiled program architecture will be a 32 bit executable. (forcing bits=32)."
+            print("Compiled program architecture will be a 32 bit executable. (forcing bits=32).")
         else:
-            print "Failed to detect MSVC compiler architecture version... Defaulting to 32bit executable settings (forcing bits=32). Compilation attempt will continue, but SCons can not detect for what architecture this build is compiled for. You should check your settings/compilation setup."
+            print("Failed to detect MSVC compiler architecture version... Defaulting to 32bit executable settings (forcing bits=32). Compilation attempt will continue, but SCons can not detect for what architecture this build is compiled for. You should check your settings/compilation setup.")
         if env["bits"] == "64":
             env.Append(CCFLAGS=['/D_WIN64'])
     else:
@@ -310,7 +299,7 @@ def configure(env):
         env.use_windows_spawn_fix()
 
         # build using mingw
-        env.Append(CCFLAGS=['-DWINVER=%s' % winver, '-D_WIN32_WINNT=%s' % winver])
+        env.Append(CCFLAGS=['-DWINVER=%s' % env['target_win_version'], '-D_WIN32_WINNT=%s' % env['target_win_version']])
         if (os.name == "nt"):
             env['ENV']['TMP'] = os.environ['TMP']  # way to go scons, you can be so stupid sometimes
         else:
