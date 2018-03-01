@@ -37,6 +37,11 @@
 
 static const char *globals_renames[][2] = {
 	/* [application] */
+	{ "application/name", "application/config/name" },
+	{ "application/auto_accept_quit", "application/config/auto_accept_quit" },
+	{ "application/boot_splash", "application/boot_splash/image" },
+	{ "application/boot_splash_fullsize", "application/boot_splash/fullsize" },
+	{ "application/icon", "application/config/icon" },
 	{ "application/main_scene", "application/run/main_scene" },
 	{ "application/main_loop_type", "application/run/main_loop_type" },
 	{ "application/disable_stdout", "application/run/disable_stdout" },
@@ -44,46 +49,46 @@ static const char *globals_renames[][2] = {
 	{ "application/frame_delay_msec", "application/run/frame_delay_msec" },
 
 	/* [debug] */
-	{ "debug/profiler_max_functions", "debug/profiler/max_functions" },
-	{ "debug/max_remote_stdout_chars_per_second", "network/debug/max_remote_stdout_chars_per_second" },
-	{ "debug/force_fps", "debug/fps/force_fps" },
-	{ "debug/verbose_stdout", "debug/stdout/verbose_stdout" },
+	{ "debug/profiler_max_functions", "debug/settings/profiler/max_functions" },
+	{ "debug/max_remote_stdout_chars_per_second", "network/limits/debugger_stdout/max_chars_per_second" },
+	{ "debug/force_fps", "debug/settings/fps/force_fps" },
+	{ "debug/verbose_stdout", "debug/settings/stdout/verbose_stdout" },
 	//{ "debug/max_texture_size", "debug/" },
 	//{ "debug/max_texture_size_alert", "debug/" },
 	//{ "debug/image_load_times", "debug/" },
-	{ "debug/script_max_call_stack", "debug/script/max_call_stack" },
-	{ "debug/collision_shape_color", "debug/collision/shape_color" },
-	{ "debug/collision_contact_color", "debug/collision/contact_color" },
-	{ "debug/navigation_geometry_color", "debug/navigation/geometry_color" },
-	{ "debug/navigation_disabled_geometry_color", "debug/navigation/disabled_geometry_color" },
-	{ "debug/collision_max_contacts_displayed", "debug/collision/max_contacts_displayed" },
+	{ "debug/script_max_call_stack", "debug/settings/gdscript/max_call_stack" },
+	{ "debug/collision_shape_color", "debug/shapes/collision/shape_color" },
+	{ "debug/collision_contact_color", "debug/shapes/collision/contact_color" },
+	{ "debug/navigation_geometry_color", "debug/shapes/navigation/geometry_color" },
+	{ "debug/navigation_disabled_geometry_color", "debug/shapes/navigation/disabled_geometry_color" },
+	{ "debug/collision_max_contacts_displayed", "debug/shapes/collision/max_contacts_displayed" },
 	//{ "debug/indicators_enabled", "debug/" },
-	{ "debug/print_fps", "debug/stdout/print_fps" },
+	{ "debug/print_fps", "debug/settings/stdout/print_fps" },
 	//{ "debug/print_metrics", "debug/" },
 
 	/* [display] */
 	{ "display/driver", "display/driver/name" },
-	{ "display/width", "display/window/width" },
-	{ "display/height", "display/window/height" },
-	{ "display/allow_hidpi", "display/window/allow_hidpi" },
-	{ "display/fullscreen", "display/window/fullscreen" },
-	{ "display/resizable", "display/window/resizable" },
-	{ "display/borderless_window", "display/window/borderless" },
-	{ "display/use_vsync", "display/window/use_vsync" },
-	{ "display/test_width", "display/window/test_width" },
-	{ "display/test_height", "display/window/test_height" },
-	{ "display/use_2d_pixel_snap", "rendering/2d/use_pixel_snap" },
-	{ "display/keep_screen_on", "display/energy_saving/keep_screen_on" },
-	{ "display/orientation", "display/handheld/orientation" },
-	{ "display/emulate_touchscreen", "display/handheld/emulate_touchscreen" },
+	{ "display/width", "display/window/size/width" },
+	{ "display/height", "display/window/size/height" },
+	{ "display/allow_hidpi", "display/window/dpi/allow_hidpi" },
+	{ "display/fullscreen", "display/window/size/fullscreen" },
+	{ "display/resizable", "display/window/size/resizable" },
+	{ "display/borderless_window", "display/window/size/borderless" },
+	{ "display/use_vsync", "display/window/vsync/use_vsync" },
+	{ "display/test_width", "display/window/size/test_width" },
+	{ "display/test_height", "display/window/size/test_height" },
+	{ "display/use_2d_pixel_snap", "rendering/quality/2d/use_pixel_snap" },
+	{ "display/keep_screen_on", "display/window/energy_saving/keep_screen_on" },
+	{ "display/orientation", "display/window/handheld/orientation" },
+	{ "display/emulate_touchscreen", "display/window/handheld/emulate_touchscreen" },
 	{ "display/use_hidpi_theme", "gui/theme/use_hidpi" },
 	{ "display/custom_theme", "gui/theme/custom" },
 	{ "display/custom_theme_font", "gui/theme/custom_font" },
 	{ "display/swap_ok_cancel", "gui/common/swap_ok_cancel" },
 	{ "display/tooltip_delay", "gui/timers/tooltip_delay_sec" },
 	{ "display/text_edit_idle_detect_sec", "gui/timers/text_edit_idle_detect_sec" },
-	{ "display/stretch_mode", "display/stretch/mode" },
-	{ "display/stretch_aspect", "display/stretch/aspect" },
+	{ "display/stretch_mode", "display/window/stretch/mode" },
+	{ "display/stretch_aspect", "display/window/stretch/aspect" },
 
 	/* [render] */
 	{ "render/thread_model", "rendering/threads/thread_model" },
@@ -91,7 +96,7 @@ static const char *globals_renames[][2] = {
 	//{ "render/thread_textures_prealloc", "" },
 	//{ "render/shadows_enabled", "" },
 	//{ "render/aabb_random_points", "" },
-	{ "render/default_clear_color", "rendering/viewport/default_clear_color" },
+	{ "render/default_clear_color", "rendering/environment/default_clear_color" },
 	//{ "render/room_cull_enabled", "" },
 	//{ "render/light_discard_enabled", "" },
 
@@ -107,7 +112,7 @@ static const char *globals_renames[][2] = {
 	//{ "audio/mixer_latency", "" },
 
 	/* [physics] */
-	{ "physics/fixed_fps", "physics/common/fixed_fps" },
+	{ "physics/fixed_fps", "physics/common/physics_fps" },
 	{ "physics/remove_collision_helpers_at_runtime", "physics/" },
 	{ "physics/sleep_threshold_linear", "physics/3d/sleep_threshold_linear" },
 	{ "physics/sleep_threshold_angular", "physics/3d/sleep_threshold_angular" },
@@ -122,7 +127,7 @@ static const char *globals_renames[][2] = {
 	//{ "core/message_queue_size_kb", "" },
 	//{ "core/rid_pool_prealloc", "" },
 	//{ "core/thread_rid_pool_prealloc", "" },
-	{ "core/packet_stream_peer_max_buffer_po2", "network/packets/packet_stream_peer_max_buffer_po2" },
+	{ "core/packet_stream_peer_max_buffer_po2", "network/limits/packet_peer_stream/max_buffer_po2" },
 
 	/* [rasterizer.Android] */
 	//{ "rasterizer.Android/use_fragment_lighting", "" },
@@ -141,7 +146,7 @@ static const char *globals_renames[][2] = {
 
 	/* [rasterizer] */
 	// most don't have an equivalent or are not meaningful to port
-	{ "rasterizer/anisotropic_filter_level", "rendering/quality/anisotropic_filter_level" },
+	{ "rasterizer/anisotropic_filter_level", "rendering/quality/filter/anisotropic_filter_level" },
 
 	/* [physics_2d] */
 	{ "physics_2d/thread_model", "physics/2d/thread_model" },
@@ -153,7 +158,7 @@ static const char *globals_renames[][2] = {
 	{ "physics_2d/cell_size", "physics/2d/cell_size" },
 	{ "physics_2d/large_object_surface_treshold_in_cells", "physics/2d/large_object_surface_threshold_in_cells" },
 	{ "physics_2d/default_gravity", "physics/2d/default_gravity" },
-	{ "physics_2d/default_gravity_vector", "physics/2d/default_gravity" },
+	{ "physics_2d/default_gravity_vector", "physics/2d/default_gravity_vector" },
 	{ "physics_2d/default_linear_damp", "physics/2d/default_linear_damp" },
 	{ "physics_2d/default_angular_damp", "physics/2d/default_angular_damp" },
 
@@ -237,7 +242,7 @@ static const char *prop_renames[][2] = {
 	{ "shadow/filter", "shadow_filter" },
 	{ "shadow/item_cull_mask", "shadow_item_cull_mask" },
 	{ "transform/pos", "position" },
-	{ "transform/rot", "rotation_deg" },
+	{ "transform/rot", "rotation_degrees" },
 	{ "transform/scale", "scale" },
 	{ "z/z", "z" },
 	{ "z/relative", "z_as_relative" },
@@ -323,7 +328,7 @@ static const char *prop_renames[][2] = {
 	{ "quad/centered", "centered" },
 	{ "transform/local", "transform" },
 	{ "transform/translation", "translation" },
-	{ "transform/rotation", "rotation_deg" },
+	{ "transform/rotation", "rotation_degrees" },
 	{ "transform/scale", "scale" },
 	{ "visibility/visible", "visible" },
 	{ "params/volume_db", "volume_db" },
@@ -476,6 +481,8 @@ static const char *type_renames[][2] = {
 	{ "SamplePlayer2D", "AudioStreamPlayer2D" },
 	{ "SoundPlayer2D", "Node2D" },
 	{ "SampleLibrary", "Resource" },
+	{ "ColorFrame", "ColorRect" },
+	{ "ReferenceFrame", "ReferenceRect" },
 	{ "TextureFrame", "TextureRect" },
 	{ "Patch9Frame", "NinePatchRect" },
 	{ "FixedMaterial", "SpatialMaterial" },
@@ -522,17 +529,20 @@ void EditorExportGodot3::_rename_properties(const String &p_type, List<ExportDat
 
 	for (List<ExportData::PropertyData>::Element *E = p_props->front(); E; E = E->next()) {
 
+		// 2D rotations are now clockwise to match the downward Y base
+		// Do this before the renaming, as afterwards we can't distinguish
+		// between 2D and 3D rotations_degrees
+		if (E->get().name == "transform/rot") {
+			E->get().value = E->get().value.operator real_t() * -1.0;
+		}
+
+		/* Do the actual renaming */
+
 		if (prop_rename_map.has(E->get().name)) {
 			E->get().name = prop_rename_map[E->get().name];
 		}
 
 		/* Hardcoded fixups for properties that changed definition in 3.0 */
-
-		// 2D rotations are now clockwise to match the downward Y base
-		// TODO: Make sure this doesn't break 3D rotations
-		if (E->get().name == "rotation_deg") {
-			E->get().value = E->get().value.operator real_t() * -1.0;
-		}
 
 		// Anchors changed from Begin,End,Ratio,Center to Begin,End,Center
 		if (E->get().name.begins_with("anchor_")) {
@@ -2219,9 +2229,69 @@ Error EditorExportGodot3::export_godot3(const String &p_path, bool convert_scrip
 			}
 		}
 
-		if (file.extension().to_lower() == "fnt") {
+		// Changing all the old extensions to new Godot 3.0 extensions.
+		// Refer PR #9201
+		String extension = file.extension().to_lower();
+		if (extension == "anm") {
+			resource_replace_map[file] = file.basename() + ".anim";
+			resource_replace_map[file_local] = file_local.basename() + ".anim";
+		} else if (extension == "asogg") {
+			resource_replace_map[file] = file.basename() + ".oggstr";
+			resource_replace_map[file_local] = file_local.basename() + ".oggstr";
+		} else if (extension == "atex") {
+			resource_replace_map[file] = file.basename() + ".atlastex";
+			resource_replace_map[file_local] = file_local.basename() + ".atlastex";
+		} else if (extension == "cbm") {
+			resource_replace_map[file] = file.basename() + ".cubemap";
+			resource_replace_map[file_local] = file_local.basename() + ".cubemap";
+		} else if (extension == "cvtex") {
+			resource_replace_map[file] = file.basename() + ".curvetex";
+			resource_replace_map[file_local] = file_local.basename() + ".curvetex";
+		} else if (extension == "fnt") {
 			resource_replace_map[file] = file.basename() + ".font";
 			resource_replace_map[file_local] = file_local.basename() + ".font";
+		} else if (extension == "gt") {
+			resource_replace_map[file] = file.basename() + ".meshlib";
+			resource_replace_map[file_local] = file_local.basename() + ".meshlib";
+		} else if (extension == "ltex") {
+			resource_replace_map[file] = file.basename() + ".largetex";
+			resource_replace_map[file_local] = file_local.basename() + ".largetex";
+		} else if (extension == "mmsh") {
+			resource_replace_map[file] = file.basename() + ".multimesh";
+			resource_replace_map[file_local] = file_local.basename() + ".multimesh";
+		} else if (extension == "msh") {
+			resource_replace_map[file] = file.basename() + ".mesh";
+			resource_replace_map[file_local] = file_local.basename() + ".mesh";
+		} else if (extension == "mtl") {
+			resource_replace_map[file] = file.basename() + ".material";
+			resource_replace_map[file_local] = file_local.basename() + ".material";
+		} else if (extension == "sbx") {
+			resource_replace_map[file] = file.basename() + ".stylebox";
+			resource_replace_map[file_local] = file_local.basename() + ".stylebox";
+		} else if (extension == "sgp") {
+			resource_replace_map[file] = file.basename() + ".vshader";
+			resource_replace_map[file_local] = file_local.basename() + ".vshader";
+		} else if (extension == "shd") {
+			resource_replace_map[file] = file.basename() + ".shader";
+			resource_replace_map[file_local] = file_local.basename() + ".shader";
+		} else if (extension == "shp") {
+			resource_replace_map[file] = file.basename() + ".shape";
+			resource_replace_map[file_local] = file_local.basename() + ".shape";
+		} else if (extension == "smp") {
+			resource_replace_map[file] = file.basename() + ".sample";
+			resource_replace_map[file_local] = file_local.basename() + ".sample";
+		} else if (extension == "tex") {
+			resource_replace_map[file] = file.basename() + ".texture";
+			resource_replace_map[file_local] = file_local.basename() + ".texture";
+		} else if (extension == "thm") {
+			resource_replace_map[file] = file.basename() + ".theme";
+			resource_replace_map[file_local] = file_local.basename() + ".theme";
+		} else if (extension == "wrd") {
+			resource_replace_map[file] = file.basename() + ".world";
+			resource_replace_map[file_local] = file_local.basename() + ".world";
+		} else if (extension == "xl") {
+			resource_replace_map[file] = file.basename() + ".translation";
+			resource_replace_map[file_local] = file_local.basename() + ".translation";
 		}
 	}
 
@@ -2243,8 +2313,48 @@ Error EditorExportGodot3::export_godot3(const String &p_path, bool convert_scrip
 
 		target_path = p_path.plus_file(path.replace("res://", ""));
 
+		// Changing all the old extensions to new Godot 3.0 extensions.
+		// Refer PR #9201
 		if (extension == "fnt") {
 			target_path = target_path.basename() + ".font";
+		} else if (extension == "asogg") {
+			target_path = target_path.basename() + ".oggstr";
+		} else if (extension == "atex") {
+			target_path = target_path.basename() + ".atlastex";
+		} else if (extension == "cbm") {
+			target_path = target_path.basename() + ".cubemap";
+		} else if (extension == "cvtex") {
+			target_path = target_path.basename() + ".curvetex";
+		} else if (extension == "fnt") {
+			target_path = target_path.basename() + ".font";
+		} else if (extension == "gt") {
+			target_path = target_path.basename() + ".meshlib";
+		} else if (extension == "ltex") {
+			target_path = target_path.basename() + ".largetex";
+		} else if (extension == "mmsh") {
+			target_path = target_path.basename() + ".multimesh";
+		} else if (extension == "msh") {
+			target_path = target_path.basename() + ".mesh";
+		} else if (extension == "mtl") {
+			target_path = target_path.basename() + ".material";
+		} else if (extension == "sbx") {
+			target_path = target_path.basename() + ".stylebox";
+		} else if (extension == "sgp") {
+			target_path = target_path.basename() + ".vshader";
+		} else if (extension == "shd") {
+			target_path = target_path.basename() + ".shader";
+		} else if (extension == "shp") {
+			target_path = target_path.basename() + ".shape";
+		} else if (extension == "smp") {
+			target_path = target_path.basename() + ".sample";
+		} else if (extension == "tex") {
+			target_path = target_path.basename() + ".texture";
+		} else if (extension == "thm") {
+			target_path = target_path.basename() + ".theme";
+		} else if (extension == "wrd") {
+			target_path = target_path.basename() + ".world";
+		} else if (extension == "xl") {
+			target_path = target_path.basename() + ".translation";
 		}
 
 		progress.step(target_path.get_file(), idx++);
