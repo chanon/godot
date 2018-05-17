@@ -41,7 +41,9 @@ int ResourceSaver::saver_count = 0;
 bool ResourceSaver::timestamp_on_save = false;
 ResourceSavedCallback ResourceSaver::save_callback = 0;
 
-Error ResourceSaver::save(const String &p_path, const RES &p_resource, uint32_t p_flags) {
+Error ResourceSaver::save(const String &ip_path, const RES &p_resource, uint32_t p_flags) {
+	// ADDED BY CHANON: use remaps! for the editor for localization preview
+	String p_path = ResourceLoader::path_remap(ip_path);
 
 	String extension = p_path.get_extension();
 	Error err = ERR_FILE_UNRECOGNIZED;
